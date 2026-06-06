@@ -90,12 +90,6 @@
       line-height: 1.55;
     }
 
-    /* <p/> paragraph spacer */
-    .dialog-body .para-break {
-      display: block;
-      height: 0.55em;
-    }
-
     /* <username/> — slightly tinted so it stands out */
     .dialog-body .username {
       color: #a8e0a8;
@@ -195,30 +189,35 @@
 
   function renderText(raw) {
     return raw
-      .replace(/<p\/>/g, '<span class="para-break"></span>')
       .replace(/<br\s*\/>/g, '<br/>')
       .replace(/<username\/>/g, `<span class="username">${USERNAME}</span>`);
   }
 
+  // Returns a DocumentFragment — may contain multiple .dialog-entry boxes if <p/> is present
   function buildEntry(key, text, delayIndex) {
     const info = parseKey(key);
-    const wrapper = document.createElement('div');
+    const fragment = document.createDocumentFragment();
 
     const label = document.createElement('div');
     label.className = 'dialog-label';
     label.textContent = info.raw;
+    fragment.appendChild(label);
 
-    const box = document.createElement('div');
-    box.className = 'dialog-entry';
-    box.style.animationDelay = `${delayIndex * 55}ms`;
-    box.innerHTML = `
-      <div class="dialog-npc-name">${info.npc}</div>
-      <div class="dialog-body">${renderText(text)}</div>
-    `;
+    // Split on <p/> — each segment becomes its own dialog box
+    const segments = text.split(/<p\s*\/>/i).map(s => s.trim()).filter(s => s);
 
-    wrapper.appendChild(label);
-    wrapper.appendChild(box);
-    return wrapper;
+    segments.forEach((segment, segIndex) => {
+      const box = document.createElement('div');
+      box.className = 'dialog-entry';
+      box.style.animationDelay = `${(delayIndex + segIndex) * 55}ms`;
+      box.innerHTML = `
+        <div class="dialog-npc-name">${info.npc}</div>
+        <div class="dialog-body">${renderText(segment)}</div>
+      `;
+      fragment.appendChild(box);
+    });
+
+    return fragment;
   }
 
   function setStatus(msg) {
