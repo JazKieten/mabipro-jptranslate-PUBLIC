@@ -5,357 +5,424 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MabiScript Studio</title>
   <style>
+    :root {
+      --bg:          #e8e2d2;
+      --surface:     #f0ebe0;
+      --surface-hi:  #faf7f0;
+      --border:      #c0cab0;
+      --border-hi:   #78a060;
+      --gold:        #9a7820;
+      --gold-bright: #c09830;
+      --gold-dim:    #c8b078;
+      --text:        #1e2818;
+      --text-dim:    #485e38;
+      --text-muted:  #889878;
+      --green:       #3a7028;
+      --green-dim:   #cce8b8;
+      --red-dim:     #f0e0e0;
+      --hdr:         #1a3318;
+      --hdr-border:  #2c4e28;
+      --hdr-text:    #d8d0a0;
+      --hdr-dim:     #6a8860;
+      --hdr-muted:   #3a5838;
+      --radius:      4px;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #1a1510;
+      background: var(--bg);
       min-height: 100vh;
-      padding: 0 24px 80px;
+      padding: 0 28px 100px;
       font-family: Tahoma, Arial, sans-serif;
+      color: var(--text);
     }
 
-    /* ── STICKY HEADER ── */
-    #sticky-header {
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       STICKY HEADER  (dark forest green)
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #header {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: #1a1510;
-      border-bottom: 1px solid #3a2810;
-      padding: 14px 0 12px;
-      margin: 0 -24px;
-      padding-left: 24px;
-      padding-right: 24px;
+      background: var(--hdr);
+      border-bottom: 2px solid var(--hdr-border);
+      box-shadow: 0 4px 28px rgba(0,0,0,0.45);
+      margin: 0 -28px;
+      padding: 0 28px;
     }
 
+    /* ── Branding ── */
     #branding {
-      text-align: center;
-      margin-bottom: 12px;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--hdr-border);
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
     }
     #branding h1 {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: bold;
-      color: #c8a060;
-      letter-spacing: 0.12em;
+      color: var(--hdr-text);
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 12px rgba(210,190,120,0.2);
     }
     #branding .subtitle {
-      font-size: 0.7rem;
-      color: #604828;
-      letter-spacing: 0.06em;
-      margin-top: 3px;
+      font-size: 0.68rem;
+      color: var(--hdr-dim);
+      letter-spacing: 0.04em;
+      font-style: italic;
     }
 
-    /* ── TOOLBAR ── */
+    /* ── Toolbar ── */
     #toolbar {
       display: flex;
       align-items: center;
-      gap: 7px;
-      max-width: 1023px;
-      margin: 0 auto 9px;
+      gap: 6px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--hdr-border);
     }
-    .tool-btn {
-      background: #241808;
-      border: 1px solid #503820;
-      color: #907050;
+    .t-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--hdr-border);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+    .tbtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #253e20;
+      border: 1px solid #3a5830;
+      color: #88a870;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 11px;
-      padding: 4px 11px;
+      padding: 4px 10px;
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: var(--radius);
+      transition: border-color .15s, color .15s, background .15s;
       user-select: none;
       white-space: nowrap;
     }
-    .tool-btn:hover { border-color: #907040; color: #c09060; }
-    .tool-btn.active { background: #342010; border-color: #907040; color: #d8b870; }
-    #save-btn { border-color: #2a5030; color: #608060; }
-    #save-btn:hover { background: #182818; border-color: #508050; color: #90c090; }
-    #save-btn.has-changes { background: #182818; border-color: #508050; color: #90c090; }
-    #unsaved-badge {
+    .tbtn:hover { border-color: #5a8040; color: #a8c888; }
+    #save-btn { border-color: #3a6828; color: #70b858; }
+    #save-btn:hover { background: #2a5020; border-color: #58a040; color: #90d870; }
+    #save-btn.lit  { background: #2a5020; border-color: #58a040; color: #90d870; }
+    #unsaved {
       font-size: 11px;
-      color: #705030;
+      color: #80b860;
       margin-left: 2px;
+      opacity: 0;
+      transition: opacity .2s;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      background: none;
+      border: none;
+      font-family: inherit;
+      padding: 0;
     }
+    #unsaved:hover { color: #a0d880; }
+    #unsaved.show { opacity: 1; }
 
-    /* ── SEARCH BAR ── */
-    #search-bar {
+    /* ── Search ── */
+    #search-row {
       display: flex;
       gap: 7px;
-      max-width: 1023px;
-      margin: 0 auto 8px;
+      padding: 9px 0 8px;
+      border-bottom: 1px solid var(--hdr-border);
     }
     #line-input {
       flex: 1;
-      background: #201408;
-      border: 1px solid #503820;
-      color: #e0c898;
+      background: #132a12;
+      border: 1px solid #2a4828;
+      color: #c8ddb8;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 12px;
-      padding: 5px 9px;
+      padding: 6px 10px;
       outline: none;
-      border-radius: 2px;
+      border-radius: var(--radius);
+      transition: border-color .15s;
     }
-    #line-input::placeholder { color: #50381c; }
-    #line-input:focus { border-color: #907040; }
-    #load-btn {
-      background: #2e1e0a;
-      border: 1px solid #503820;
-      color: #b89050;
+    #line-input::placeholder { color: #3a5838; }
+    #line-input:focus { border-color: #4a7840; }
+    #search-btn {
+      background: #253e20;
+      border: 1px solid #2a4828;
+      color: #78a068;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 12px;
-      padding: 5px 14px;
+      padding: 6px 16px;
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: var(--radius);
+      transition: border-color .15s, color .15s;
     }
-    #load-btn:hover { background: #3e2810; border-color: #907040; }
+    #search-btn:hover { border-color: #5a8040; color: #a0c880; }
 
-    /* ── SECTION FILTER ── */
-    #section-filter {
-      max-width: 1023px;
-      margin: 0 auto;
+    /* ── Section filter ── */
+    #sec-filter {
+      border-bottom: 1px solid var(--hdr-border);
     }
-    #section-filter summary {
-      font-size: 0.68rem;
-      color: #604828;
-      cursor: pointer;
-      user-select: none;
-      letter-spacing: 0.04em;
-      list-style: none;
-      padding: 2px 0;
-    }
-    #section-filter summary::-webkit-details-marker { display: none; }
-    #section-filter summary::before { content: '▶  '; font-size: 0.6rem; }
-    #section-filter[open] summary::before { content: '▼  '; }
-    #section-filter summary:hover { color: #907040; }
-    #section-filter-actions {
-      display: flex;
-      gap: 12px;
-      padding: 6px 0 4px;
-    }
-    .filter-action { background: none; border: none; font-size: 0.68rem; color: #604828; cursor: pointer; text-decoration: underline; }
-    .filter-action:hover { color: #907040; }
-    #section-checkboxes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px 18px;
-      padding-bottom: 6px;
-    }
-    .sec-label {
+    #sec-summary {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.68rem;
-      color: #907060;
+      gap: 6px;
+      padding: 6px 0 5px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.65rem;
+      color: var(--hdr-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color .15s;
+    }
+    #sec-summary:hover { color: var(--hdr-dim); }
+    #sec-arrow { font-size: 0.55rem; transition: transform .2s; }
+    #sec-filter.open #sec-arrow { transform: rotate(90deg); }
+    #sec-body {
+      display: none;
+      padding: 6px 0 10px;
+    }
+    #sec-filter.open #sec-body { display: block; }
+    #sec-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 7px;
+    }
+    .sec-act {
+      background: none; border: none;
+      font-size: 0.65rem; color: var(--hdr-muted);
+      cursor: pointer; text-decoration: underline;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+    .sec-act:hover { color: var(--hdr-dim); }
+    #sec-boxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 14px;
+    }
+    .sec-lbl {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; color: var(--hdr-dim);
       cursor: pointer;
     }
-    .sec-label input { accent-color: #907040; cursor: pointer; }
+    .sec-lbl input { accent-color: #78b858; cursor: pointer; }
 
-    /* ── DIALOG LIST ── */
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DIALOG LIST  (parchment field)
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     #dialog-list {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 22px;
       width: fit-content;
-      margin: 22px auto 0;
+      margin: 26px auto 0;
     }
 
-    .entry-group { display: contents; }
-
-    .dialog-label {
-      font-size: 0.65rem;
-      color: #503820;
-      letter-spacing: 0.04em;
-      margin-bottom: 2px;
-      padding-left: 2px;
+    .dlabel {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+      margin-bottom: 5px;
+      padding: 14px 2px 0;
+      border-top: 1.5px solid var(--border);
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .modified-badge {
-      font-size: 0.6rem;
-      background: #1a2e1a;
-      border: 1px solid #406040;
-      color: #70a870;
-      padding: 1px 5px;
+    .mod-badge {
+      font-size: 0.58rem;
+      background: var(--green-dim);
+      border: 1px solid #5a9830;
+      color: #2a5818;
+      padding: 1px 6px;
       border-radius: 2px;
+      letter-spacing: 0.03em;
     }
 
-    /* ── DIALOG BOX ── */
-    .dialog-entry {
+    /* ── Dialog box ── */
+    .dbox {
       background-image: url('/media/textbox_bg.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       width: 1023px;
       min-height: 254px;
-      padding: 17px 52px 46px 50px;
-      animation: fadeIn 0.2s ease both;
+      padding: 22px 54px 50px 52px;
       position: relative;
+      animation: fadeIn .18s ease both;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
+      from { opacity: 0; transform: translateY(5px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .dialog-npc-name {
+    .dbox-name {
       font-size: 13px;
       font-weight: bold;
-      color: #ffffff;
-      line-height: 1.25;
-      margin-bottom: 0;
+      color: #fff;
+      line-height: 1.3;
+      margin-bottom: 6px;
       text-shadow:
         -3px -3px 0 #000, 0 -3px 0 #000, 3px -3px 0 #000,
         -3px  0   0 #000,               3px  0   0 #000,
         -3px  3px 0 #000, 0  3px 0 #000, 3px  3px 0 #000;
     }
 
-    /* Read-only body */
-    .dialog-body {
-      font-size: 13px;
-      color: #ffffff;
-      line-height: 1.25;
-    }
-    .dialog-body .username { color: #a8e0a8; font-weight: bold; }
-    .p-divider {
-      display: block;
-      border-top: 1px solid rgba(255,255,255,0.2);
-      margin: 5px 0;
-    }
-
-    /* Editable textarea */
-    .body-textarea {
+    /* Edit-mode textarea */
+    .dbox-ta {
       display: block;
       width: 100%;
       background: transparent;
       border: 1px dashed rgba(255,255,255,0.12);
-      color: #ffffff;
+      color: #fff;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 13px;
-      line-height: 1.25;
+      line-height: 1.35;
       resize: none;
       outline: none;
-      padding: 1px 3px;
-      min-height: 2.5em;
+      padding: 2px 3px;
+      min-height: 2.8em;
       overflow: hidden;
+      transition: border-color .15s, background .15s;
     }
-    .body-textarea:focus { border-color: rgba(200,160,80,0.45); background: rgba(255,255,255,0.03); }
-    .body-textarea.modified { border-color: rgba(100,180,100,0.45); }
+    .dbox-ta:focus {
+      border-color: rgba(180,220,140,0.35);
+      background: rgba(255,255,255,0.03);
+    }
+    .dbox-ta.mod { border-color: rgba(100,190,80,0.5); }
 
-    /* ── STATUS ── */
+    /* ── Status / empty state ── */
     #status {
-      text-align: center;
-      color: #503820;
-      font-size: 0.85rem;
-      padding: 48px 0;
       width: 1023px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      padding: 56px 0;
+      line-height: 1.7;
     }
 
-    /* ── DIFF PANEL ── */
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       DIFF PANEL  (dark green, matches header)
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     #diff-panel {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: #0e0b07;
-      border-top: 2px solid #503820;
-      max-height: 38vh;
+      background: var(--hdr);
+      border-top: 2px solid var(--hdr-border);
+      max-height: 36vh;
       overflow-y: auto;
       z-index: 200;
-      padding: 10px 24px 14px;
+      padding: 10px 28px 16px;
       transform: translateY(100%);
-      transition: transform 0.22s ease;
+      transition: transform .22s ease;
     }
-    #diff-panel.visible { transform: translateY(0); }
-    #diff-header {
+    #diff-panel.up { transform: translateY(0); }
+    #diff-bar {
       display: flex;
       align-items: center;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--hdr-border);
     }
     #diff-title {
-      font-size: 0.7rem;
-      color: #907040;
-      letter-spacing: 0.1em;
+      font-size: 0.68rem;
+      color: var(--hdr-dim);
+      letter-spacing: 0.12em;
       text-transform: uppercase;
     }
-    #diff-close {
+    #diff-x {
       margin-left: auto;
       background: none;
-      border: 1px solid #503820;
-      color: #705030;
+      border: 1px solid var(--hdr-border);
+      color: var(--hdr-muted);
       font-size: 11px;
-      padding: 2px 8px;
+      padding: 2px 9px;
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: var(--radius);
     }
-    #diff-close:hover { border-color: #907040; color: #b07040; }
-    .diff-entry {
+    #diff-x:hover { border-color: #4a7040; color: var(--hdr-dim); }
+    .diff-item {
       margin-bottom: 10px;
-      border-left: 2px solid #503820;
       padding-left: 10px;
+      border-left: 2px solid #3a6030;
     }
-    .diff-key { font-size: 0.63rem; color: #604828; margin-bottom: 3px; }
-    .diff-row { display: flex; gap: 10px; font-size: 11px; margin-bottom: 2px; }
-    .diff-lbl { flex: 0 0 58px; color: #604828; font-size: 10px; }
-    .diff-old { color: #d07070; }
-    .diff-new { color: #70b870; }
+    .diff-key { font-size: 0.6rem; color: var(--hdr-muted); margin-bottom: 4px; }
+    .diff-row { display: flex; gap: 10px; font-size: 11px; margin-bottom: 2px; line-height: 1.5; }
+    .diff-lbl { flex: 0 0 56px; font-size: 10px; color: var(--hdr-muted); }
+    .diff-old { color: #c87878; }
+    .diff-new { color: #80c870; }
 
-    /* ── RELOAD FLASH ── */
-    #reload-flash {
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RELOAD TOAST
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #toast {
       position: fixed;
-      top: 12px; right: 16px;
-      background: rgba(160,120,40,0.9);
-      color: #100c06;
+      top: 14px; right: 18px;
+      background: #253e20;
+      border: 1px solid #4a7840;
+      color: #90d870;
       font-size: 0.68rem;
       font-weight: bold;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 4px 10px;
-      border-radius: 3px;
+      padding: 5px 12px;
+      border-radius: var(--radius);
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity .25s;
       pointer-events: none;
       z-index: 9999;
     }
-    #reload-flash.show { opacity: 1; }
+    #toast.show { opacity: 1; }
   </style>
 </head>
 <body>
 
-<div id="sticky-header">
+<div id="header">
   <div id="branding">
     <h1>MabiScript Studio</h1>
-    <div class="subtitle">An editing and preview environment for Mabinogi Dialogue</div>
+    <span class="subtitle">An editing and preview environment for Mabinogi Dialogue</span>
   </div>
 
   <div id="toolbar">
-    <button id="p-mode-btn"    class="tool-btn active">&#x229E; Split on &lt;p&gt;</button>
-    <button id="edit-mode-btn" class="tool-btn active">&#x270E; Edit Mode</button>
-    <button id="save-btn"      class="tool-btn">&#x1F4BE; Save</button>
-    <span id="unsaved-badge"></span>
+    <button id="save-btn" class="tbtn" title="Save all changes to npc.japan.txt">&#x2191;&ensp;Save</button>
+    <button id="unsaved"></button>
   </div>
 
-  <div id="search-bar">
+  <div id="search-row">
     <input id="line-input" type="text"
-      placeholder="Line # (86), range (86-90), or search text / fuzzy…"
-      autocomplete="off" />
-    <button id="load-btn">Search</button>
+      placeholder="Line # (86), range (86–90), or search text…"
+      autocomplete="off" spellcheck="false" />
+    <button id="search-btn">Search</button>
   </div>
 
-  <details id="section-filter">
-    <summary>Filter by Section</summary>
-    <div id="section-filter-actions">
-      <button class="filter-action" id="sel-all">Select all</button>
-      <button class="filter-action" id="sel-none">Deselect all</button>
+  <div id="sec-filter">
+    <div id="sec-summary" onclick="toggleSecFilter()">
+      <span id="sec-arrow">&#x25B6;</span>
+      <span>Filter by Section</span>
     </div>
-    <div id="section-checkboxes"></div>
-  </details>
+    <div id="sec-body">
+      <div id="sec-actions">
+        <button class="sec-act" id="sel-all">Select all</button>
+        <button class="sec-act" id="sel-none">Deselect all</button>
+      </div>
+      <div id="sec-boxes"></div>
+    </div>
+  </div>
 </div>
 
 <div id="dialog-list">
   <div id="status">Enter a line number or search term above to begin.</div>
 </div>
 
-<div id="reload-flash">&#x21BB; Reloaded</div>
+<div id="toast">&#x21BB;&ensp;File updated</div>
 
 <div id="diff-panel">
-  <div id="diff-header">
+  <div id="diff-bar">
     <span id="diff-title">Unsaved Changes</span>
-    <button id="diff-close">&#x2715; Close</button>
+    <button id="diff-x">&#x2715;&ensp;Close</button>
   </div>
   <div id="diff-content"></div>
 </div>
@@ -363,19 +430,15 @@
 <script>
   const USERNAME = 'Traveler';
 
-  // ── App state ──
+  // ── State ──
   let allLines       = null;
-  let pSplitMode     = true;
-  let editMode       = true;
   let allSections    = [];
   let activeSections = new Set();
 
-  // pendingEdits: Map<lineNum, Map<segIdx, newText>>
-  const pendingEdits  = new Map();
-  // originalBodies: Map<"lineNum-segIdx", originalText>
-  const originalBodies = new Map();
+  const pendingEdits   = new Map();   // lineNum → Map<segIdx, newDisplay>
+  const originalBodies = new Map();   // "ln-si" → { display, hiddenTags, raw }
 
-  // ── Helpers ──
+  // ── Utility ──
   function esc(s) {
     return String(s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -383,71 +446,83 @@
   }
 
   function parseKey(raw) {
-    const parts = raw.split('.');
-    const npcRaw = parts[1] || '';
+    const p = raw.split('.');
+    const npcRaw = p[1] || '';
     return {
-      section: (parts[0] || '').toLowerCase(),
+      section: (p[0] || '').toLowerCase(),
       npc: npcRaw ? npcRaw.charAt(0).toUpperCase() + npcRaw.slice(1) : 'NPC',
       raw
     };
   }
 
-  function renderText(raw) {
-    return raw
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      // restore the safe tags we actually want rendered
-      .replace(/&lt;br\s*\/&gt;/gi, '<br/>')
-      .replace(/&lt;username\/&gt;/gi, `<span class="username">${esc(USERNAME)}</span>`);
+  // ── Tag handling ──
+  const TAG_RE = () => /<\/?[a-zA-Z][^>]*\/?>/g;
+
+  // Strip tags, convert <br/> → \n, collect everything else as hiddenTags
+  function prepareForEdit(rawSeg) {
+    const hiddenTags = [];
+    const parts = [];
+    const re = TAG_RE();
+    let last = 0, m;
+    while ((m = re.exec(rawSeg)) !== null) {
+      if (m.index > last) parts.push(rawSeg.slice(last, m.index));
+      const tag = m[0];
+      if (/^<br[\s/>]/i.test(tag)) {
+        parts.push('\n');
+      } else {
+        hiddenTags.push(tag);
+      }
+      last = re.lastIndex;
+    }
+    if (last < rawSeg.length) parts.push(rawSeg.slice(last));
+    return { display: parts.join('').trim(), hiddenTags };
   }
 
-  // ── Fuzzy match ──
-  function fuzzyMatch(haystack, needle) {
-    const h = haystack.toLowerCase();
-    const n = needle.toLowerCase();
-    let ni = 0;
-    for (let i = 0; i < h.length && ni < n.length; i++) {
-      if (h[i] === n[ni]) ni++;
-    }
-    return ni === n.length;
+  // Reconstruct raw segment from edited display text + preserved hidden tags
+  function reconstruct(display, hiddenTags) {
+    const body = display.replace(/\n/g, '<br/>');
+    return hiddenTags.length ? body + hiddenTags.join('') : body;
   }
 
   // ── Section filter ──
   function rebuildSections() {
     const seen = new Set();
     allLines.forEach(line => {
-      const tab = line.indexOf('\t');
-      if (tab === -1) return;
-      const sec = (line.slice(0, tab).split('.')[0] || '').toLowerCase().trim();
+      const t = line.indexOf('\t');
+      if (t === -1) return;
+      const sec = (line.slice(0, t).split('.')[0] || '').toLowerCase().trim();
       if (sec) seen.add(sec);
     });
-    allSections = [...seen].sort();
-    activeSections = new Set(allSections);
-    renderSectionBoxes();
+    const newSecs = [...seen].sort();
+
+    // Add new sections as active; preserve existing checked state
+    newSecs.forEach(s => { if (!allSections.includes(s)) activeSections.add(s); });
+    allSections = newSecs;
+    renderSecBoxes();
   }
 
-  function renderSectionBoxes() {
-    const wrap = document.getElementById('section-checkboxes');
+  function renderSecBoxes() {
+    const wrap = document.getElementById('sec-boxes');
     wrap.innerHTML = '';
     allSections.forEach(sec => {
       const lbl = document.createElement('label');
-      lbl.className = 'sec-label';
+      lbl.className = 'sec-lbl';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = activeSections.has(sec);
-      cb.dataset.sec = sec;
+      cb.dataset.s = sec;
       cb.addEventListener('change', () => {
         if (cb.checked) activeSections.add(sec); else activeSections.delete(sec);
-        rerunQuery();
+        rerun();
       });
       lbl.appendChild(cb);
-      lbl.appendChild(document.createTextNode(' ' + sec));
+      lbl.appendChild(document.createTextNode(' ' + sec));
       wrap.appendChild(lbl);
     });
   }
 
-  function rerunQuery() {
-    const q = document.getElementById('line-input').value.trim();
-    if (q) showLines(q);
+  function toggleSecFilter() {
+    document.getElementById('sec-filter').classList.toggle('open');
   }
 
   // ── Auto-resize textarea ──
@@ -456,182 +531,147 @@
     ta.style.height = ta.scrollHeight + 'px';
   }
 
-  // ── Build a single dialog box element ──
-  function buildBox(key, body, lineNum, segIdx, animDelay) {
-    const info  = parseKey(key);
-    const eid   = `${lineNum}-${segIdx}`;
-    originalBodies.set(eid, body);
+  // ── Build a single dialog box ──
+  function buildBox(key, segBody, lineNum, segIdx, delay) {
+    const info = parseKey(key);
+    const eid  = `${lineNum}-${segIdx}`;
+
+    const prepared = prepareForEdit(segBody);
+    originalBodies.set(eid, { display: prepared.display, hiddenTags: prepared.hiddenTags, raw: segBody });
 
     const box = document.createElement('div');
-    box.className = 'dialog-entry';
-    box.dataset.lineNum = lineNum;
-    box.dataset.segIdx  = segIdx;
-    box.dataset.key     = key;
-    box.style.animationDelay = `${animDelay}ms`;
+    box.className = 'dbox';
+    box.dataset.ln  = lineNum;
+    box.dataset.si  = segIdx;
+    box.dataset.key = key;
+    box.style.animationDelay = `${delay}ms`;
 
-    // NPC name
     const nameEl = document.createElement('div');
-    nameEl.className = 'dialog-npc-name';
+    nameEl.className = 'dbox-name';
     nameEl.textContent = info.npc;
     box.appendChild(nameEl);
 
-    if (editMode) {
-      const ta = document.createElement('textarea');
-      ta.className = 'body-textarea';
-      ta.value    = body;
-      ta.dataset.eid = eid;
-      ta.addEventListener('input', () => {
-        autoResize(ta);
-        onEdit(ta, lineNum, segIdx, key);
-      });
-      box.appendChild(ta);
-      requestAnimationFrame(() => autoResize(ta));
-    } else {
-      const bodyEl = document.createElement('div');
-      bodyEl.className = 'dialog-body';
-      if (!pSplitMode) {
-        // Single-box mode: show <p/> as a visible divider line
-        const segs = body.split(/<p\s*\/>/gi);
-        segs.forEach((seg, i) => {
-          if (i > 0) {
-            const hr = document.createElement('span');
-            hr.className = 'p-divider';
-            bodyEl.appendChild(hr);
-          }
-          const span = document.createElement('span');
-          span.innerHTML = renderText(seg.trim());
-          bodyEl.appendChild(span);
-        });
-      } else {
-        bodyEl.innerHTML = renderText(body);
-      }
-      box.appendChild(bodyEl);
-    }
+    const ta = document.createElement('textarea');
+    ta.className = 'dbox-ta';
+    ta.value     = prepared.display;
+    ta.addEventListener('input', () => { autoResize(ta); onEdit(ta, lineNum, segIdx, key); });
+    box.appendChild(ta);
+    requestAnimationFrame(() => autoResize(ta));
 
     return box;
   }
 
-  // ── Build an entry group (label + one or more boxes) ──
+  // ── Build entry: label + one box per <p/> segment ──
   function buildEntry(key, body, lineNum, delayOff) {
     const frag = document.createDocumentFragment();
-
+    const segs = body.split(/<p\s*\/>/gi).map(s => s.trim())
+      .filter(s => s && prepareForEdit(s).display.trim().length > 0);
+    if (!segs.length) return frag;
     const lbl = document.createElement('div');
-    lbl.className = 'dialog-label';
-    lbl.dataset.labelFor = lineNum;
-    lbl.textContent = `#${lineNum}  ${key}`;
+    lbl.className = 'dlabel';
+    lbl.dataset.lf = lineNum;
+    lbl.textContent = `#${lineNum}  ·  ${key}`;
     frag.appendChild(lbl);
-
-    if (pSplitMode) {
-      const segs = body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean);
-      segs.forEach((seg, si) => {
-        frag.appendChild(buildBox(key, seg, lineNum, si, (delayOff + si) * 50));
-      });
-    } else {
-      frag.appendChild(buildBox(key, body, lineNum, 0, delayOff * 50));
-    }
-
+    segs.forEach((seg, si) => frag.appendChild(buildBox(key, seg, lineNum, si, (delayOff + si) * 50)));
     return frag;
   }
 
   // ── Edit tracking ──
   function onEdit(ta, lineNum, segIdx, key) {
-    const eid      = `${lineNum}-${segIdx}`;
-    const original = originalBodies.get(eid) ?? '';
-    const current  = ta.value;
-    const changed  = current !== original;
+    const eid  = `${lineNum}-${segIdx}`;
+    const orig = originalBodies.get(eid)?.display ?? '';
+    const cur  = ta.value;
+    const diff = cur !== orig;
 
-    ta.classList.toggle('modified', changed);
+    ta.classList.toggle('mod', diff);
 
     if (!pendingEdits.has(lineNum)) pendingEdits.set(lineNum, new Map());
-    const segs = pendingEdits.get(lineNum);
-    if (changed) segs.set(segIdx, current);
+    const segsMap = pendingEdits.get(lineNum);
+    if (diff) segsMap.set(segIdx, cur);
     else {
-      segs.delete(segIdx);
-      if (segs.size === 0) pendingEdits.delete(lineNum);
+      segsMap.delete(segIdx);
+      if (!segsMap.size) pendingEdits.delete(lineNum);
     }
 
-    // Update label badge
-    const lbl = document.querySelector(`.dialog-label[data-label-for="${lineNum}"]`);
+    // Label badge
+    const lbl = document.querySelector(`.dlabel[data-lf="${lineNum}"]`);
     if (lbl) {
-      const badge = lbl.querySelector('.modified-badge');
+      const badge = lbl.querySelector('.mod-badge');
       if (pendingEdits.has(lineNum)) {
-        if (!badge) {
-          const b = document.createElement('span');
-          b.className = 'modified-badge';
-          b.textContent = 'modified';
-          lbl.appendChild(b);
-        }
+        if (!badge) { const b = document.createElement('span'); b.className = 'mod-badge'; b.textContent = 'modified'; lbl.appendChild(b); }
       } else {
-        if (badge) badge.remove();
+        badge?.remove();
       }
     }
 
-    updateUnsavedBadge();
-    updateDiffPanel();
+    refreshUnsaved();
+    refreshDiff();
   }
 
-  function updateUnsavedBadge() {
-    const n  = pendingEdits.size;
-    const el = document.getElementById('unsaved-badge');
+  function refreshUnsaved() {
+    const n   = pendingEdits.size;
+    const el  = document.getElementById('unsaved');
     const btn = document.getElementById('save-btn');
     if (n > 0) {
-      el.textContent  = `${n} unsaved line${n > 1 ? 's' : ''}`;
-      btn.classList.add('has-changes');
+      el.textContent = `${n} unsaved line${n > 1 ? 's' : ''}`;
+      el.classList.add('show');
+      btn.classList.add('lit');
     } else {
-      el.textContent = '';
-      btn.classList.remove('has-changes');
+      el.classList.remove('show');
+      btn.classList.remove('lit');
     }
   }
 
-  function updateDiffPanel() {
+  function refreshDiff() {
     const panel   = document.getElementById('diff-panel');
     const content = document.getElementById('diff-content');
 
-    if (pendingEdits.size === 0) {
-      panel.classList.remove('visible');
-      return;
-    }
+    if (!pendingEdits.size) { panel.classList.remove('up'); return; }
 
-    panel.classList.add('visible');
+    panel.classList.add('up');
     content.innerHTML = '';
 
-    pendingEdits.forEach((segs, lineNum) => {
-      segs.forEach((newText, segIdx) => {
-        const eid      = `${lineNum}-${segIdx}`;
-        const original = originalBodies.get(eid) ?? '';
-        const boxEl    = document.querySelector(`.dialog-entry[data-line-num="${lineNum}"][data-seg-idx="${segIdx}"]`);
-        const key      = boxEl ? boxEl.dataset.key : `line ${lineNum}`;
+    pendingEdits.forEach((segsMap, lineNum) => {
+      segsMap.forEach((newText, segIdx) => {
+        const eid  = `${lineNum}-${segIdx}`;
+        const orig = originalBodies.get(eid)?.display ?? '';
+        const boxEl = document.querySelector(`.dbox[data-ln="${lineNum}"][data-si="${segIdx}"]`);
+        const key   = boxEl?.dataset.key ?? `line ${lineNum}`;
 
-        const entry = document.createElement('div');
-        entry.className = 'diff-entry';
-        entry.innerHTML =
-          `<div class="diff-key">#${lineNum} &nbsp;·&nbsp; ${esc(key)}${segs.size > 1 ? ' &nbsp;·&nbsp; seg ' + segIdx : ''}</div>` +
-          `<div class="diff-row"><span class="diff-lbl">Original:</span><span class="diff-old">${esc(original)}</span></div>` +
-          `<div class="diff-row"><span class="diff-lbl">Modified:</span><span class="diff-new">${esc(newText)}</span></div>`;
-        content.appendChild(entry);
+        const item = document.createElement('div');
+        item.className = 'diff-item';
+        item.innerHTML =
+          `<div class="diff-key">#${lineNum}&ensp;·&ensp;${esc(key)}${segsMap.size > 1 ? `&ensp;·&ensp;seg ${segIdx}` : ''}</div>` +
+          `<div class="diff-row"><span class="diff-lbl">Before:</span><span class="diff-old">${esc(orig) || '<em style="opacity:.4">empty</em>'}</span></div>` +
+          `<div class="diff-row"><span class="diff-lbl">After:</span><span class="diff-new">${esc(newText) || '<em style="opacity:.4">empty</em>'}</span></div>`;
+        content.appendChild(item);
       });
     });
   }
 
   // ── Save ──
   async function saveAll() {
-    if (pendingEdits.size === 0) return;
-
+    if (!pendingEdits.size) return;
     const changes = [];
+
     pendingEdits.forEach((_, lineNum) => {
-      const boxes = [...document.querySelectorAll(`.dialog-entry[data-line-num="${lineNum}"]`)]
-        .sort((a,b) => Number(a.dataset.segIdx) - Number(b.dataset.segIdx));
+      const boxes = [...document.querySelectorAll(`.dbox[data-ln="${lineNum}"]`)]
+        .sort((a,b) => Number(a.dataset.si) - Number(b.dataset.si));
       if (!boxes.length) return;
 
       const key  = boxes[0].dataset.key;
       const segs = [];
+
       boxes.forEach(bx => {
-        const si = Number(bx.dataset.segIdx);
-        const ta = bx.querySelector('.body-textarea');
-        segs[si]  = ta ? ta.value : (originalBodies.get(`${lineNum}-${si}`) ?? '');
+        const si = Number(bx.dataset.si);
+        const ta = bx.querySelector('.dbox-ta');
+        const ob = originalBodies.get(`${lineNum}-${si}`);
+        const displayText = ta ? ta.value : (ob?.display ?? '');
+        segs[si] = reconstruct(displayText, ob?.hiddenTags ?? []);
       });
 
-      const body = pSplitMode ? segs.join('<p/>') : (segs[0] ?? '');
+      // Join segments with <p/> (regardless of current pSplitMode — always split was used for edit)
+      const body = segs.join('<p/>');
       changes.push({ lineNumber: lineNum, rawLine: key + '\t' + body });
     });
 
@@ -641,40 +681,41 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ changes })
       });
-      if (!res.ok) throw new Error('Server returned ' + res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
 
-      // Sync cache & originalBodies
+      // Sync local state
       changes.forEach(({ lineNumber, rawLine }) => {
         allLines[lineNumber - 1] = rawLine;
-        const tab  = rawLine.indexOf('\t');
-        const body = tab === -1 ? '' : rawLine.slice(tab + 1);
-        const segs = pSplitMode
-          ? body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean)
-          : [body];
-        segs.forEach((seg, si) => originalBodies.set(`${lineNumber}-${si}`, seg));
+        const t    = rawLine.indexOf('\t');
+        const body = t === -1 ? '' : rawLine.slice(t + 1);
+        const segs = body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean);
+        segs.forEach((seg, si) => {
+          const pr = prepareForEdit(seg);
+          originalBodies.set(`${lineNumber}-${si}`, { display: pr.display, hiddenTags: pr.hiddenTags, raw: seg });
+        });
       });
 
       pendingEdits.clear();
-      document.querySelectorAll('.body-textarea.modified').forEach(ta => ta.classList.remove('modified'));
-      document.querySelectorAll('.modified-badge').forEach(b => b.remove());
-      updateUnsavedBadge();
-      updateDiffPanel();
-      flashReload();
+      document.querySelectorAll('.dbox-ta.mod').forEach(ta => ta.classList.remove('mod'));
+      document.querySelectorAll('.mod-badge').forEach(b => b.remove());
+      refreshUnsaved();
+      refreshDiff();
+      flashToast();
     } catch (e) {
       alert('Save failed: ' + e.message);
     }
   }
 
-  // ── Fetch file ──
+  // ── Fetch ──
   async function fetchLines() {
     try {
-      const res  = await fetch('/dialog.txt?t=' + Date.now());
+      const res = await fetch('/dialog.txt?t=' + Date.now());
       if (!res.ok) throw new Error();
       allLines = (await res.text()).split('\n');
       rebuildSections();
       return true;
     } catch {
-      setStatus('&#9888; Could not load npc.japan.txt');
+      setStatus('&#9888;&ensp;Could not load npc.japan.txt');
       return false;
     }
   }
@@ -685,7 +726,16 @@
 
   // ── Main render ──
   function showLines(query) {
-    if (!allLines) { setStatus('&#9888; File not loaded yet.'); return; }
+    try {
+      _showLines(query);
+    } catch (e) {
+      console.error('showLines error:', e);
+      setStatus('&#9888;&ensp;Render error — see console for details.');
+    }
+  }
+
+  function _showLines(query) {
+    if (!allLines) { setStatus('&#9888;&ensp;File not loaded yet.'); return; }
 
     const container = document.getElementById('dialog-list');
     container.innerHTML = '';
@@ -694,134 +744,106 @@
     let entries = [];
     let truncated = false;
 
+    function secOk(key) {
+      if (!activeSections.size) return true;
+      return activeSections.has((key.split('.')[0] || '').toLowerCase());
+    }
+
     if (/^\d+-\d+$/.test(q)) {
-      // ── Range ──
       let [a, b] = q.split('-').map(Number);
       if (a > b) [a, b] = [b, a];
       for (let n = a; n <= b; n++) {
         const line = allLines[n - 1];
-        if (line === undefined) { setStatus(`Line ${n} is out of range (file has ${allLines.length} lines).`); return; }
-        const tab = line.indexOf('\t');
-        if (tab === -1) continue;
-        const key = line.slice(0, tab).trim();
-        if (activeSections.size && !activeSections.has(key.split('.')[0].toLowerCase())) continue;
-        entries.push({ lineNum: n, key, body: line.slice(tab + 1).trim() });
+        if (!line && line !== '') { setStatus(`Line ${n} is out of range (file has ${allLines.length} lines).`); return; }
+        const t = line.indexOf('\t');
+        if (t === -1) continue;
+        const key = line.slice(0, t).trim();
+        if (!secOk(key)) continue;
+        entries.push({ n, key, body: line.slice(t + 1).trim() });
       }
-
     } else if (/^\d+$/.test(q)) {
-      // ── Single line ──
       const n    = Number(q);
       const line = allLines[n - 1];
-      if (!line) { setStatus(`Line ${n} is out of range.`); return; }
-      const tab = line.indexOf('\t');
-      if (tab !== -1) {
-        const key = line.slice(0, tab).trim();
-        if (!activeSections.size || activeSections.has(key.split('.')[0].toLowerCase())) {
-          entries.push({ lineNum: n, key, body: line.slice(tab + 1).trim() });
-        }
+      if (!line && line !== '') { setStatus(`Line ${n} is out of range.`); return; }
+      const t = line ? line.indexOf('\t') : -1;
+      if (t !== -1) {
+        const key = line.slice(0, t).trim();
+        if (secOk(key)) entries.push({ n, key, body: line.slice(t + 1).trim() });
       }
-
     } else {
-      // ── Fuzzy text search ──
+      // Exact substring search (case-insensitive)
       const MAX = 100;
+      const ql = q.toLowerCase();
       for (let i = 0; i < allLines.length; i++) {
         const line = allLines[i];
-        const tab  = line.indexOf('\t');
-        if (tab === -1) continue;
-        const key  = line.slice(0, tab).trim();
-        const body = line.slice(tab + 1).trim();
-        if (activeSections.size && !activeSections.has(key.split('.')[0].toLowerCase())) continue;
-        if (!fuzzyMatch(key + ' ' + body, q)) continue;
-        entries.push({ lineNum: i + 1, key, body });
-        if (entries.length > MAX) { truncated = true; entries.pop(); break; }
+        const t    = line.indexOf('\t');
+        if (t === -1) continue;
+        const key  = line.slice(0, t).trim();
+        const body = line.slice(t + 1).trim();
+        if (!secOk(key)) continue;
+        if (!(key + ' ' + body).toLowerCase().includes(ql)) continue;
+        entries.push({ n: i + 1, key, body });
+        if (entries.length >= MAX) { truncated = true; break; }
       }
     }
 
     if (truncated) {
       const note = document.createElement('div');
-      note.id = 'status';
-      note.style.cssText = 'margin-bottom:10px;text-align:left;padding:8px 0;';
-      note.textContent = `Showing first 100 matches — refine your search for fewer results.`;
+      note.style.cssText = 'font-size:.7rem;color:var(--text-muted);padding:0 0 8px 2px;width:1023px;';
+      note.textContent = 'Showing first 100 matches — refine your search for more specific results.';
       container.appendChild(note);
     }
 
-    if (!entries.length) {
+    if (!entries.length && !truncated) {
       setStatus(`No dialog found for &ldquo;<b>${esc(q)}</b>&rdquo;.`);
       return;
     }
 
-    entries.forEach(({ lineNum, key, body }, i) => {
-      container.appendChild(buildEntry(key, body, lineNum, i));
-    });
+    entries.forEach(({ n, key, body }, i) => container.appendChild(buildEntry(key, body, n, i)));
   }
 
-  // ── Flash ──
-  function flashReload() {
-    const el = document.getElementById('reload-flash');
+  // ── UI helpers ──
+  function rerun() {
+    const q = document.getElementById('line-input').value.trim();
+    if (q) showLines(q);
+  }
+
+  function flashToast() {
+    const el = document.getElementById('toast');
     el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 1200);
+    setTimeout(() => el.classList.remove('show'), 1400);
   }
 
-  // ── Wire up controls ──
-  document.getElementById('load-btn').addEventListener('click', () => {
-    showLines(document.getElementById('line-input').value);
-  });
-  document.getElementById('line-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') showLines(e.target.value);
-  });
-
-  document.getElementById('p-mode-btn').addEventListener('click', () => {
-    pSplitMode = !pSplitMode;
-    pendingEdits.clear(); // clear edits to avoid seg-index confusion on mode switch
-    updateUnsavedBadge();
-    updateDiffPanel();
-    const btn = document.getElementById('p-mode-btn');
-    btn.classList.toggle('active', pSplitMode);
-    btn.innerHTML = pSplitMode ? '&#x229E; Split on &lt;p&gt;' : '&#x2630; Merge &lt;p&gt;';
-    rerunQuery();
-  });
-
-  document.getElementById('edit-mode-btn').addEventListener('click', () => {
-    editMode = !editMode;
-    const btn = document.getElementById('edit-mode-btn');
-    btn.classList.toggle('active', editMode);
-    btn.innerHTML = editMode ? '&#x270E; Edit Mode' : '&#x1F441; View Mode';
-    rerunQuery();
-  });
+  // ── Controls ──
+  document.getElementById('search-btn').addEventListener('click', () => showLines(document.getElementById('line-input').value));
+  document.getElementById('line-input').addEventListener('keydown', e => { if (e.key === 'Enter') showLines(e.target.value); });
 
   document.getElementById('save-btn').addEventListener('click', saveAll);
-
-  document.getElementById('diff-close').addEventListener('click', () => {
-    document.getElementById('diff-panel').classList.remove('visible');
-  });
+  document.getElementById('unsaved').addEventListener('click', () => { refreshDiff(); document.getElementById('diff-panel').classList.add('up'); });
+  document.getElementById('diff-x').addEventListener('click', () => document.getElementById('diff-panel').classList.remove('up'));
 
   document.getElementById('sel-all').addEventListener('click', () => {
     activeSections = new Set(allSections);
-    document.querySelectorAll('#section-checkboxes input').forEach(cb => cb.checked = true);
-    rerunQuery();
+    document.querySelectorAll('#sec-boxes input').forEach(cb => cb.checked = true);
+    rerun();
   });
-
   document.getElementById('sel-none').addEventListener('click', () => {
     activeSections = new Set();
-    document.querySelectorAll('#section-checkboxes input').forEach(cb => cb.checked = false);
-    rerunQuery();
+    document.querySelectorAll('#sec-boxes input').forEach(cb => cb.checked = false);
+    rerun();
   });
 
-  // ── SSE live reload ──
+  // ── SSE (auto-reconnects on its own — do NOT close it in onerror) ──
   const evtSource = new EventSource('/events');
   evtSource.onmessage = async e => {
     if (e.data !== 'reload') return;
     await fetchLines();
-    rerunQuery();
-    flashReload();
+    rerun();
+    flashToast();
   };
-  let pollingStarted = false;
-  evtSource.onerror = () => {
-    if (pollingStarted) return;
-    pollingStarted = true;
-    evtSource.close();
-    setInterval(async () => { await fetchLines(); rerunQuery(); }, 2000);
-  };
+  // onerror fires on disconnect but EventSource will reconnect automatically —
+  // just ignore it so we don't accidentally break the connection.
+  evtSource.onerror = () => {};
 
   fetchLines();
 </script>

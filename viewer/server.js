@@ -9,15 +9,17 @@ const HTML_FILE = path.join(__dirname, 'index.html');
 // SSE clients waiting for reload signals
 let sseClients = [];
 
-// Watch the source file for changes — debounced so rapid multi-fire on Windows sends only one reload
+// Use watchFile (polling) instead of watch — fs.watch is unreliable on Windows for files
+// in parent directories. Polls every 500 ms, only fires when mtime actually changes.
 let watchTimeout = null;
-fs.watch(DIALOG_FILE, () => {
+fs.watchFile(DIALOG_FILE, { persistent: true, interval: 500 }, (curr, prev) => {
+  if (curr.mtimeMs === prev.mtimeMs) return;
   clearTimeout(watchTimeout);
   watchTimeout = setTimeout(() => {
     console.log('[mabi-viewer] npc.japan.txt changed — notifying clients...');
-    sseClients.forEach(res => res.write('data: reload\n\n'));
+    sseClients.forEach(res => { try { res.write('data: reload\n\n'); } catch (_) {} });
     sseClients = sseClients.filter(res => !res.destroyed);
-  }, 150);
+  }, 200);
 });
 
 const server = http.createServer((req, res) => {
