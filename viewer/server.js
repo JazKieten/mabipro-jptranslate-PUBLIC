@@ -3,19 +3,21 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 3000;
-const DIALOG_FILE = path.join(__dirname, 'dialog.txt');
+const DIALOG_FILE = path.join(__dirname, '..', 'npc.japan.txt');
 const HTML_FILE = path.join(__dirname, 'index.html');
 
 // SSE clients waiting for reload signals
 let sseClients = [];
 
-// Watch the dialog.txt file for changes
+// Watch the source file for changes — debounced so rapid multi-fire on Windows sends only one reload
+let watchTimeout = null;
 fs.watch(DIALOG_FILE, () => {
-  console.log('[mabi-viewer] dialog.txt changed — notifying clients...');
-  sseClients.forEach(res => {
-    res.write('data: reload\n\n');
-  });
-  sseClients = sseClients.filter(res => !res.destroyed);
+  clearTimeout(watchTimeout);
+  watchTimeout = setTimeout(() => {
+    console.log('[mabi-viewer] npc.japan.txt changed — notifying clients...');
+    sseClients.forEach(res => res.write('data: reload\n\n'));
+    sseClients = sseClients.filter(res => !res.destroyed);
+  }, 150);
 });
 
 const server = http.createServer((req, res) => {
@@ -74,5 +76,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n🍀 Mabi Dialog Viewer running at http://localhost:${PORT}`);
-  console.log(`   Edit dialog.txt and the browser will auto-refresh!\n`);
+  console.log(`   Watching npc.japan.txt — browser auto-refreshes on save!\n`);
 });

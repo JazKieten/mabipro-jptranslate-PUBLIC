@@ -14,6 +14,15 @@
       font-family: Tahoma, Arial, sans-serif;
     }
 
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #1a1510;
+      padding: 20px 24px 16px;
+      margin: -32px -24px 28px;
+    }
+
     h1 {
       text-align: center;
       font-size: 0.8rem;
@@ -21,14 +30,14 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: #806040;
-      margin-bottom: 28px;
+      margin-bottom: 14px;
     }
 
     #dialog-list {
       display: flex;
       flex-direction: column;
       gap: 20px;
-      max-width: 1024px;
+      width: fit-content;
       margin: 0 auto;
     }
 
@@ -41,16 +50,17 @@
       padding-left: 2px;
     }
 
-    /* The box itself — bg image fills it, text sits on top via padding */
+    /* The box itself — fixed at the image's native width, never resizes */
     .dialog-entry {
       background-image: url('/media/textbox_bg.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
+      width: 1023px;
+      min-height: 254px;
       /* padding: top  right  bottom  left
          top/left/right clear the ornate border + a touch of inner margin
          bottom clears the border + the Continue button row               */
       padding: 18px 52px 46px 50px;
-      min-height: 180px;
       animation: fadeIn 0.2s ease both;
     }
 
@@ -59,13 +69,17 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* NPC name — bold, white, same size as body */
+    /* NPC name — bold, white, black outline */
     .dialog-npc-name {
       font-size: 13px;
       font-weight: bold;
       color: #ffffff;
       line-height: 1.5;
       margin-bottom: 1px;
+      text-shadow:
+        -3px -3px 0 #000, 0 -3px 0 #000, 3px -3px 0 #000,
+        -3px  0   0 #000,               3px  0   0 #000,
+        -3px  3px 0 #000, 0  3px 0 #000, 3px  3px 0 #000;
     }
 
     /* Dialog body text */
@@ -87,6 +101,41 @@
       color: #a8e0a8;
       font-weight: bold;
     }
+
+    /* Search bar */
+    #search-bar {
+      display: flex;
+      gap: 8px;
+      width: 1023px;
+      margin: 0 auto;
+    }
+
+    #line-input {
+      flex: 0 0 180px;
+      background: #2a1f14;
+      border: 1px solid #604828;
+      color: #e8d8b0;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      padding: 6px 10px;
+      outline: none;
+      border-radius: 2px;
+    }
+    #line-input::placeholder { color: #604828; }
+    #line-input:focus { border-color: #a07840; }
+
+    #load-btn {
+      background: #3a2810;
+      border: 1px solid #604828;
+      color: #c8a860;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      padding: 6px 16px;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    #load-btn:hover { background: #4a3418; border-color: #a07840; }
+    #load-btn:active { background: #2a1f10; }
 
     /* Empty / error state */
     #status {
@@ -118,12 +167,23 @@
 </head>
 <body>
 
-<h1>Mabi Dialog Viewer</h1>
-<div id="dialog-list"><div id="status">Loading dialog…</div></div>
+<div id="sticky-header">
+  <h1>Mabi Dialog Viewer</h1>
+  <div id="search-bar">
+    <input id="line-input" type="text" placeholder="Line number, e.g. 86 or 86-90" autocomplete="off" />
+    <button id="load-btn">Load</button>
+  </div>
+</div>
+
+<div id="dialog-list"><div id="status">Enter a line number above to begin.</div></div>
 <div id="reload-flash">↻ Reloaded</div>
 
 <script>
   const USERNAME = 'Traveler';
+
+  // All lines from dialog.txt, loaded once (and refreshed on file change).
+  // Index 0 = line 1 in the file.
+  let allLines = null;
 
   function parseKey(key) {
     const parts = key.split('.');
@@ -142,7 +202,6 @@
 
   function buildEntry(key, text, delayIndex) {
     const info = parseKey(key);
-
     const wrapper = document.createElement('div');
 
     const label = document.createElement('div');
@@ -162,32 +221,68 @@
     return wrapper;
   }
 
-  async function loadDialog() {
+  function setStatus(msg) {
+    document.getElementById('dialog-list').innerHTML = `<div id="status">${msg}</div>`;
+  }
+
+  // Fetch and cache all lines. Returns true on success.
+  async function fetchLines() {
     try {
       const res = await fetch('/dialog.txt?t=' + Date.now());
-      if (!res.ok) throw new Error('fetch failed');
+      if (!res.ok) throw new Error();
       const text = await res.text();
+      // Keep all lines including blank ones so line numbers stay accurate.
+      allLines = text.split('\n');
+      return true;
+    } catch (e) {
+      setStatus('⚠ Could not load dialog.txt');
+      return false;
+    }
+  }
 
-      const lines = text.split('\n').filter(l => l.trim());
-      const container = document.getElementById('dialog-list');
-      container.innerHTML = '';
+  // Parse the input string and show the requested line(s).
+  function showLines(query) {
+    if (!allLines) { setStatus('⚠ File not loaded yet.'); return; }
 
-      if (!lines.length) {
-        container.innerHTML = '<div id="status">No dialog lines found.</div>';
+    const container = document.getElementById('dialog-list');
+    container.innerHTML = '';
+
+    const q = query.trim();
+    let start, end;
+
+    if (/^\d+-\d+$/.test(q)) {
+      // Range: "86-90"
+      [start, end] = q.split('-').map(Number);
+    } else if (/^\d+$/.test(q)) {
+      // Single line: "86"
+      start = end = Number(q);
+    } else {
+      setStatus('Invalid input. Use a line number like <b>86</b> or a range like <b>86-90</b>.');
+      return;
+    }
+
+    if (start > end) [start, end] = [end, start];
+
+    const entries = [];
+    for (let n = start; n <= end; n++) {
+      const line = allLines[n - 1]; // convert to 0-based
+      if (line === undefined) {
+        container.innerHTML += `<div id="status">Line ${n} is out of range (file has ${allLines.length} lines).</div>`;
         return;
       }
-
-      lines.forEach((line, i) => {
-        const tab = line.indexOf('\t');
-        if (tab === -1) return;
-        const key  = line.slice(0, tab).trim();
-        const body = line.slice(tab + 1).trim();
-        container.appendChild(buildEntry(key, body, i));
-      });
-    } catch (e) {
-      document.getElementById('dialog-list').innerHTML =
-        '<div id="status">⚠ Could not load dialog.txt</div>';
+      const tab = line.indexOf('\t');
+      if (tab === -1) continue; // blank or non-dialog line — skip silently
+      const key  = line.slice(0, tab).trim();
+      const body = line.slice(tab + 1).trim();
+      entries.push({ key, body });
     }
+
+    if (!entries.length) {
+      setStatus(`No dialog found on line${start === end ? '' : 's'} ${q}.`);
+      return;
+    }
+
+    entries.forEach(({ key, body }, i) => container.appendChild(buildEntry(key, body, i)));
   }
 
   function flashReload() {
@@ -196,16 +291,39 @@
     setTimeout(() => el.classList.remove('show'), 1200);
   }
 
+  // Wire up the button and Enter key
+  document.getElementById('load-btn').addEventListener('click', () => {
+    showLines(document.getElementById('line-input').value);
+  });
+  document.getElementById('line-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') showLines(e.target.value);
+  });
+
+  // SSE live-reload: re-fetch file and re-run the current query
   const evtSource = new EventSource('/events');
-  evtSource.onmessage = (e) => {
-    if (e.data === 'reload') { loadDialog(); flashReload(); }
+  evtSource.onmessage = async (e) => {
+    if (e.data === 'reload') {
+      await fetchLines();
+      const q = document.getElementById('line-input').value.trim();
+      if (q) showLines(q);
+      flashReload();
+    }
   };
+  // If SSE drops, fall back to polling — but only start one interval ever
+  let pollingStarted = false;
   evtSource.onerror = () => {
+    if (pollingStarted) return;
+    pollingStarted = true;
     evtSource.close();
-    setInterval(loadDialog, 2000);
+    setInterval(async () => {
+      await fetchLines();
+      const q = document.getElementById('line-input').value.trim();
+      if (q) showLines(q);
+    }, 2000);
   };
 
-  loadDialog();
+  // Pre-load the file on page start so the first query is instant
+  fetchLines();
 </script>
 </body>
 </html>
