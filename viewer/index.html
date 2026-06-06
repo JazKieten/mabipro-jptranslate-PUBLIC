@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MabiScript Studio</title>
+  <link rel="icon" href="/media/MSS_favicon.png" type="image/png" />
   <style>
     :root {
       --bg:          #e8e2d2;
@@ -60,12 +61,10 @@
       align-items: baseline;
       gap: 14px;
     }
-    #branding h1 {
-      font-size: 1.15rem;
-      font-weight: bold;
-      color: var(--hdr-text);
-      letter-spacing: 0.08em;
-      text-shadow: 0 1px 12px rgba(210,190,120,0.2);
+    #branding-logo {
+      height: 36px;
+      width: auto;
+      display: block;
     }
     #branding .subtitle {
       font-size: 0.68rem;
@@ -168,12 +167,13 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 0 5px;
+      padding: 7px 0 6px;
       cursor: pointer;
       user-select: none;
-      font-size: 0.65rem;
-      color: var(--hdr-muted);
-      letter-spacing: 0.06em;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--hdr-dim);
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       transition: color .15s;
     }
@@ -227,7 +227,7 @@
       letter-spacing: 0.03em;
       margin-bottom: 5px;
       padding: 14px 2px 0;
-      border-top: 1.5px solid var(--border);
+      border-top: 3px solid var(--border);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -292,6 +292,35 @@
       background: rgba(255,255,255,0.03);
     }
     .dbox-ta.mod { border-color: rgba(100,190,80,0.5); }
+
+    /* ── Pagination ── */
+    .pag-bar {
+      width: 1023px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 18px 0 6px;
+    }
+    .pag-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      padding: 5px 18px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .pag-btn:hover:not(:disabled) { border-color: var(--border-hi); color: var(--text); background: var(--surface-hi); }
+    .pag-btn:disabled { opacity: 0.3; cursor: default; }
+    .pag-info {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      min-width: 180px;
+      text-align: center;
+    }
 
     /* ── Status / empty state ── */
     #status {
@@ -382,7 +411,7 @@
 
 <div id="header">
   <div id="branding">
-    <h1>MabiScript Studio</h1>
+    <img src="/media/MSS_Logo.png" alt="MabiScript Studio" id="branding-logo" />
     <span class="subtitle">An editing and preview environment for Mabinogi Dialogue</span>
   </div>
 
@@ -434,6 +463,9 @@
   let allLines       = null;
   let allSections    = [];
   let activeSections = new Set();
+  let currentPage    = 1;
+  let lastQuery      = '';
+  const PAGE_SIZE    = 100;
 
   const pendingEdits   = new Map();   // lineNum → Map<segIdx, newDisplay>
   const originalBodies = new Map();   // "ln-si" → { display, hiddenTags, raw }
@@ -742,7 +774,6 @@
     const q = query.trim();
 
     let entries = [];
-    let truncated = false;
 
     function secOk(key) {
       if (!activeSections.size) return true;
@@ -771,35 +802,62 @@
         if (secOk(key)) entries.push({ n, key, body: line.slice(t + 1).trim() });
       }
     } else {
-      // Exact substring search (case-insensitive)
-      const MAX = 100;
+      // Exact substring search (case-insensitive), tags stripped from body before matching
       const ql = q.toLowerCase();
       for (let i = 0; i < allLines.length; i++) {
         const line = allLines[i];
         const t    = line.indexOf('\t');
         if (t === -1) continue;
-        const key  = line.slice(0, t).trim();
-        const body = line.slice(t + 1).trim();
+        const key      = line.slice(0, t).trim();
+        const body     = line.slice(t + 1).trim();
         if (!secOk(key)) continue;
-        if (!(key + ' ' + body).toLowerCase().includes(ql)) continue;
+        const bodyText = body.replace(/<[^>]+>/g, '');
+        if (!(key + ' ' + bodyText).toLowerCase().includes(ql)) continue;
         entries.push({ n: i + 1, key, body });
-        if (entries.length >= MAX) { truncated = true; break; }
       }
     }
 
-    if (truncated) {
-      const note = document.createElement('div');
-      note.style.cssText = 'font-size:.7rem;color:var(--text-muted);padding:0 0 8px 2px;width:1023px;';
-      note.textContent = 'Showing first 100 matches — refine your search for more specific results.';
-      container.appendChild(note);
-    }
-
-    if (!entries.length && !truncated) {
+    if (!entries.length) {
       setStatus(`No dialog found for &ldquo;<b>${esc(q)}</b>&rdquo;.`);
       return;
     }
 
-    entries.forEach(({ n, key, body }, i) => container.appendChild(buildEntry(key, body, n, i)));
+    // Reset to page 1 whenever the query changes
+    if (q !== lastQuery) { currentPage = 1; lastQuery = q; }
+    const totalPages = Math.ceil(entries.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const pageEntries = entries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    if (totalPages > 1) container.appendChild(buildPagination(totalPages, entries.length, q));
+    pageEntries.forEach(({ n, key, body }, i) => container.appendChild(buildEntry(key, body, n, i)));
+    if (totalPages > 1) container.appendChild(buildPagination(totalPages, entries.length, q));
+  }
+
+  function buildPagination(totalPages, total, q) {
+    const bar = document.createElement('div');
+    bar.className = 'pag-bar';
+
+    const prev = document.createElement('button');
+    prev.className = 'pag-btn';
+    prev.textContent = '← Prev';
+    prev.disabled = currentPage <= 1;
+    prev.addEventListener('click', () => { currentPage--; showLines(q); });
+
+    const info = document.createElement('span');
+    info.className = 'pag-info';
+    info.textContent = `Page ${currentPage} of ${totalPages}  ·  ${total} results`;
+
+    const next = document.createElement('button');
+    next.className = 'pag-btn';
+    next.textContent = 'Next →';
+    next.disabled = currentPage >= totalPages;
+    next.addEventListener('click', () => { currentPage++; showLines(q); });
+
+    bar.appendChild(prev);
+    bar.appendChild(info);
+    bar.appendChild(next);
+    return bar;
   }
 
   // ── UI helpers ──
@@ -815,8 +873,8 @@
   }
 
   // ── Controls ──
-  document.getElementById('search-btn').addEventListener('click', () => showLines(document.getElementById('line-input').value));
-  document.getElementById('line-input').addEventListener('keydown', e => { if (e.key === 'Enter') showLines(e.target.value); });
+  document.getElementById('search-btn').addEventListener('click', () => { currentPage = 1; showLines(document.getElementById('line-input').value); });
+  document.getElementById('line-input').addEventListener('keydown', e => { if (e.key === 'Enter') { currentPage = 1; showLines(e.target.value); } });
 
   document.getElementById('save-btn').addEventListener('click', saveAll);
   document.getElementById('unsaved').addEventListener('click', () => { refreshDiff(); document.getElementById('diff-panel').classList.add('up'); });
