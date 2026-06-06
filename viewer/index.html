@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mabi Dialog Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1510;
+      min-height: 100vh;
+      padding: 32px 24px 48px;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: normal;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #806040;
+      margin-bottom: 28px;
+    }
+
+    #dialog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1024px;
+      margin: 0 auto;
+    }
+
+    /* Small key label above each box, for reviewer reference */
+    .dialog-label {
+      font-size: 0.68rem;
+      color: #604828;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+      padding-left: 2px;
+    }
+
+    /* The box itself — bg image fills it, text sits on top via padding */
+    .dialog-entry {
+      background-image: url('/media/textbox_bg.jpg');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      /* padding: top  right  bottom  left
+         top/left/right clear the ornate border + a touch of inner margin
+         bottom clears the border + the Continue button row               */
+      padding: 18px 52px 46px 50px;
+      min-height: 180px;
+      animation: fadeIn 0.2s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* NPC name — bold, white, same size as body */
+    .dialog-npc-name {
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffffff;
+      line-height: 1.5;
+      margin-bottom: 1px;
+    }
+
+    /* Dialog body text */
+    .dialog-body {
+      font-size: 13px;
+      font-weight: normal;
+      color: #ffffff;
+      line-height: 1.55;
+    }
+
+    /* <p/> paragraph spacer */
+    .dialog-body .para-break {
+      display: block;
+      height: 0.55em;
+    }
+
+    /* <username/> — slightly tinted so it stands out */
+    .dialog-body .username {
+      color: #a8e0a8;
+      font-weight: bold;
+    }
+
+    /* Empty / error state */
+    #status {
+      text-align: center;
+      color: #604828;
+      font-size: 0.9rem;
+      padding: 40px 0;
+    }
+
+    /* Live-reload flash */
+    #reload-flash {
+      position: fixed;
+      top: 12px; right: 16px;
+      background: rgba(160, 120, 40, 0.9);
+      color: #1a1510;
+      font-size: 0.7rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 3px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    #reload-flash.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<h1>Mabi Dialog Viewer</h1>
+<div id="dialog-list"><div id="status">Loading dialog…</div></div>
+<div id="reload-flash">↻ Reloaded</div>
+
+<script>
+  const USERNAME = 'Traveler';
+
+  function parseKey(key) {
+    const parts = key.split('.');
+    return {
+      npc: parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'NPC',
+      raw: key
+    };
+  }
+
+  function renderText(raw) {
+    return raw
+      .replace(/<p\/>/g, '<span class="para-break"></span>')
+      .replace(/<br\s*\/>/g, '<br/>')
+      .replace(/<username\/>/g, `<span class="username">${USERNAME}</span>`);
+  }
+
+  function buildEntry(key, text, delayIndex) {
+    const info = parseKey(key);
+
+    const wrapper = document.createElement('div');
+
+    const label = document.createElement('div');
+    label.className = 'dialog-label';
+    label.textContent = info.raw;
+
+    const box = document.createElement('div');
+    box.className = 'dialog-entry';
+    box.style.animationDelay = `${delayIndex * 55}ms`;
+    box.innerHTML = `
+      <div class="dialog-npc-name">${info.npc}</div>
+      <div class="dialog-body">${renderText(text)}</div>
+    `;
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(box);
+    return wrapper;
+  }
+
+  async function loadDialog() {
+    try {
+      const res = await fetch('/dialog.txt?t=' + Date.now());
+      if (!res.ok) throw new Error('fetch failed');
+      const text = await res.text();
+
+      const lines = text.split('\n').filter(l => l.trim());
+      const container = document.getElementById('dialog-list');
+      container.innerHTML = '';
+
+      if (!lines.length) {
+        container.innerHTML = '<div id="status">No dialog lines found.</div>';
+        return;
+      }
+
+      lines.forEach((line, i) => {
+        const tab = line.indexOf('\t');
+        if (tab === -1) return;
+        const key  = line.slice(0, tab).trim();
+        const body = line.slice(tab + 1).trim();
+        container.appendChild(buildEntry(key, body, i));
+      });
+    } catch (e) {
+      document.getElementById('dialog-list').innerHTML =
+        '<div id="status">⚠ Could not load dialog.txt</div>';
+    }
+  }
+
+  function flashReload() {
+    const el = document.getElementById('reload-flash');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1200);
+  }
+
+  const evtSource = new EventSource('/events');
+  evtSource.onmessage = (e) => {
+    if (e.data === 'reload') { loadDialog(); flashReload(); }
+  };
+  evtSource.onerror = () => {
+    evtSource.close();
+    setInterval(loadDialog, 2000);
+  };
+
+  loadDialog();
+</script>
+</body>
+</html>
