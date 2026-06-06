@@ -3,149 +3,304 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mabi Dialog Viewer</title>
+  <title>MabiScript Studio</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: #1a1510;
       min-height: 100vh;
-      padding: 32px 24px 48px;
+      padding: 0 24px 80px;
       font-family: Tahoma, Arial, sans-serif;
     }
 
+    /* ── STICKY HEADER ── */
     #sticky-header {
       position: sticky;
       top: 0;
       z-index: 100;
       background: #1a1510;
-      padding: 20px 24px 16px;
-      margin: -32px -24px 28px;
+      border-bottom: 1px solid #3a2810;
+      padding: 14px 0 12px;
+      margin: 0 -24px;
+      padding-left: 24px;
+      padding-right: 24px;
     }
 
-    h1 {
+    #branding {
       text-align: center;
-      font-size: 0.8rem;
-      font-weight: normal;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #806040;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+    }
+    #branding h1 {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #c8a060;
+      letter-spacing: 0.12em;
+    }
+    #branding .subtitle {
+      font-size: 0.7rem;
+      color: #604828;
+      letter-spacing: 0.06em;
+      margin-top: 3px;
     }
 
+    /* ── TOOLBAR ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 1023px;
+      margin: 0 auto 9px;
+    }
+    .tool-btn {
+      background: #241808;
+      border: 1px solid #503820;
+      color: #907050;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 11px;
+      padding: 4px 11px;
+      cursor: pointer;
+      border-radius: 2px;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .tool-btn:hover { border-color: #907040; color: #c09060; }
+    .tool-btn.active { background: #342010; border-color: #907040; color: #d8b870; }
+    #save-btn { border-color: #2a5030; color: #608060; }
+    #save-btn:hover { background: #182818; border-color: #508050; color: #90c090; }
+    #save-btn.has-changes { background: #182818; border-color: #508050; color: #90c090; }
+    #unsaved-badge {
+      font-size: 11px;
+      color: #705030;
+      margin-left: 2px;
+    }
+
+    /* ── SEARCH BAR ── */
+    #search-bar {
+      display: flex;
+      gap: 7px;
+      max-width: 1023px;
+      margin: 0 auto 8px;
+    }
+    #line-input {
+      flex: 1;
+      background: #201408;
+      border: 1px solid #503820;
+      color: #e0c898;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      padding: 5px 9px;
+      outline: none;
+      border-radius: 2px;
+    }
+    #line-input::placeholder { color: #50381c; }
+    #line-input:focus { border-color: #907040; }
+    #load-btn {
+      background: #2e1e0a;
+      border: 1px solid #503820;
+      color: #b89050;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      padding: 5px 14px;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    #load-btn:hover { background: #3e2810; border-color: #907040; }
+
+    /* ── SECTION FILTER ── */
+    #section-filter {
+      max-width: 1023px;
+      margin: 0 auto;
+    }
+    #section-filter summary {
+      font-size: 0.68rem;
+      color: #604828;
+      cursor: pointer;
+      user-select: none;
+      letter-spacing: 0.04em;
+      list-style: none;
+      padding: 2px 0;
+    }
+    #section-filter summary::-webkit-details-marker { display: none; }
+    #section-filter summary::before { content: '▶  '; font-size: 0.6rem; }
+    #section-filter[open] summary::before { content: '▼  '; }
+    #section-filter summary:hover { color: #907040; }
+    #section-filter-actions {
+      display: flex;
+      gap: 12px;
+      padding: 6px 0 4px;
+    }
+    .filter-action { background: none; border: none; font-size: 0.68rem; color: #604828; cursor: pointer; text-decoration: underline; }
+    .filter-action:hover { color: #907040; }
+    #section-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 18px;
+      padding-bottom: 6px;
+    }
+    .sec-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      color: #907060;
+      cursor: pointer;
+    }
+    .sec-label input { accent-color: #907040; cursor: pointer; }
+
+    /* ── DIALOG LIST ── */
     #dialog-list {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       width: fit-content;
-      margin: 0 auto;
+      margin: 22px auto 0;
     }
 
-    /* Small key label above each box, for reviewer reference */
+    .entry-group { display: contents; }
+
     .dialog-label {
-      font-size: 0.68rem;
-      color: #604828;
+      font-size: 0.65rem;
+      color: #503820;
       letter-spacing: 0.04em;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
       padding-left: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modified-badge {
+      font-size: 0.6rem;
+      background: #1a2e1a;
+      border: 1px solid #406040;
+      color: #70a870;
+      padding: 1px 5px;
+      border-radius: 2px;
     }
 
-    /* The box itself — fixed at the image's native width, never resizes */
+    /* ── DIALOG BOX ── */
     .dialog-entry {
       background-image: url('/media/textbox_bg.jpg');
       background-size: 100% 100%;
       background-repeat: no-repeat;
       width: 1023px;
       min-height: 254px;
-      /* padding: top  right  bottom  left
-         top/left/right clear the ornate border + a touch of inner margin
-         bottom clears the border + the Continue button row               */
-      padding: 18px 52px 46px 50px;
+      padding: 17px 52px 46px 50px;
       animation: fadeIn 0.2s ease both;
+      position: relative;
     }
-
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
+      from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* NPC name — bold, white, black outline */
     .dialog-npc-name {
       font-size: 13px;
       font-weight: bold;
       color: #ffffff;
-      line-height: 1.5;
-      margin-bottom: 1px;
+      line-height: 1.25;
+      margin-bottom: 0;
       text-shadow:
         -3px -3px 0 #000, 0 -3px 0 #000, 3px -3px 0 #000,
         -3px  0   0 #000,               3px  0   0 #000,
         -3px  3px 0 #000, 0  3px 0 #000, 3px  3px 0 #000;
     }
 
-    /* Dialog body text */
+    /* Read-only body */
     .dialog-body {
       font-size: 13px;
-      font-weight: normal;
       color: #ffffff;
-      line-height: 1.55;
+      line-height: 1.25;
+    }
+    .dialog-body .username { color: #a8e0a8; font-weight: bold; }
+    .p-divider {
+      display: block;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      margin: 5px 0;
     }
 
-    /* <username/> — slightly tinted so it stands out */
-    .dialog-body .username {
-      color: #a8e0a8;
-      font-weight: bold;
-    }
-
-    /* Search bar */
-    #search-bar {
-      display: flex;
-      gap: 8px;
-      width: 1023px;
-      margin: 0 auto;
-    }
-
-    #line-input {
-      flex: 0 0 180px;
-      background: #2a1f14;
-      border: 1px solid #604828;
-      color: #e8d8b0;
+    /* Editable textarea */
+    .body-textarea {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: 1px dashed rgba(255,255,255,0.12);
+      color: #ffffff;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 13px;
-      padding: 6px 10px;
+      line-height: 1.25;
+      resize: none;
       outline: none;
-      border-radius: 2px;
+      padding: 1px 3px;
+      min-height: 2.5em;
+      overflow: hidden;
     }
-    #line-input::placeholder { color: #604828; }
-    #line-input:focus { border-color: #a07840; }
+    .body-textarea:focus { border-color: rgba(200,160,80,0.45); background: rgba(255,255,255,0.03); }
+    .body-textarea.modified { border-color: rgba(100,180,100,0.45); }
 
-    #load-btn {
-      background: #3a2810;
-      border: 1px solid #604828;
-      color: #c8a860;
-      font-family: Tahoma, Arial, sans-serif;
-      font-size: 13px;
-      padding: 6px 16px;
+    /* ── STATUS ── */
+    #status {
+      text-align: center;
+      color: #503820;
+      font-size: 0.85rem;
+      padding: 48px 0;
+      width: 1023px;
+    }
+
+    /* ── DIFF PANEL ── */
+    #diff-panel {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #0e0b07;
+      border-top: 2px solid #503820;
+      max-height: 38vh;
+      overflow-y: auto;
+      z-index: 200;
+      padding: 10px 24px 14px;
+      transform: translateY(100%);
+      transition: transform 0.22s ease;
+    }
+    #diff-panel.visible { transform: translateY(0); }
+    #diff-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    #diff-title {
+      font-size: 0.7rem;
+      color: #907040;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    #diff-close {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #503820;
+      color: #705030;
+      font-size: 11px;
+      padding: 2px 8px;
       cursor: pointer;
       border-radius: 2px;
     }
-    #load-btn:hover { background: #4a3418; border-color: #a07840; }
-    #load-btn:active { background: #2a1f10; }
-
-    /* Empty / error state */
-    #status {
-      text-align: center;
-      color: #604828;
-      font-size: 0.9rem;
-      padding: 40px 0;
+    #diff-close:hover { border-color: #907040; color: #b07040; }
+    .diff-entry {
+      margin-bottom: 10px;
+      border-left: 2px solid #503820;
+      padding-left: 10px;
     }
+    .diff-key { font-size: 0.63rem; color: #604828; margin-bottom: 3px; }
+    .diff-row { display: flex; gap: 10px; font-size: 11px; margin-bottom: 2px; }
+    .diff-lbl { flex: 0 0 58px; color: #604828; font-size: 10px; }
+    .diff-old { color: #d07070; }
+    .diff-new { color: #70b870; }
 
-    /* Live-reload flash */
+    /* ── RELOAD FLASH ── */
     #reload-flash {
       position: fixed;
       top: 12px; right: 16px;
-      background: rgba(160, 120, 40, 0.9);
-      color: #1a1510;
-      font-size: 0.7rem;
+      background: rgba(160,120,40,0.9);
+      color: #100c06;
+      font-size: 0.68rem;
       font-weight: bold;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -162,166 +317,512 @@
 <body>
 
 <div id="sticky-header">
-  <h1>Mabi Dialog Viewer</h1>
-  <div id="search-bar">
-    <input id="line-input" type="text" placeholder="Line number, e.g. 86 or 86-90" autocomplete="off" />
-    <button id="load-btn">Load</button>
+  <div id="branding">
+    <h1>MabiScript Studio</h1>
+    <div class="subtitle">An editing and preview environment for Mabinogi Dialogue</div>
   </div>
+
+  <div id="toolbar">
+    <button id="p-mode-btn"    class="tool-btn active">&#x229E; Split on &lt;p&gt;</button>
+    <button id="edit-mode-btn" class="tool-btn active">&#x270E; Edit Mode</button>
+    <button id="save-btn"      class="tool-btn">&#x1F4BE; Save</button>
+    <span id="unsaved-badge"></span>
+  </div>
+
+  <div id="search-bar">
+    <input id="line-input" type="text"
+      placeholder="Line # (86), range (86-90), or search text / fuzzy…"
+      autocomplete="off" />
+    <button id="load-btn">Search</button>
+  </div>
+
+  <details id="section-filter">
+    <summary>Filter by Section</summary>
+    <div id="section-filter-actions">
+      <button class="filter-action" id="sel-all">Select all</button>
+      <button class="filter-action" id="sel-none">Deselect all</button>
+    </div>
+    <div id="section-checkboxes"></div>
+  </details>
 </div>
 
-<div id="dialog-list"><div id="status">Enter a line number above to begin.</div></div>
-<div id="reload-flash">↻ Reloaded</div>
+<div id="dialog-list">
+  <div id="status">Enter a line number or search term above to begin.</div>
+</div>
+
+<div id="reload-flash">&#x21BB; Reloaded</div>
+
+<div id="diff-panel">
+  <div id="diff-header">
+    <span id="diff-title">Unsaved Changes</span>
+    <button id="diff-close">&#x2715; Close</button>
+  </div>
+  <div id="diff-content"></div>
+</div>
 
 <script>
   const USERNAME = 'Traveler';
 
-  // All lines from dialog.txt, loaded once (and refreshed on file change).
-  // Index 0 = line 1 in the file.
-  let allLines = null;
+  // ── App state ──
+  let allLines       = null;
+  let pSplitMode     = true;
+  let editMode       = true;
+  let allSections    = [];
+  let activeSections = new Set();
 
-  function parseKey(key) {
-    const parts = key.split('.');
+  // pendingEdits: Map<lineNum, Map<segIdx, newText>>
+  const pendingEdits  = new Map();
+  // originalBodies: Map<"lineNum-segIdx", originalText>
+  const originalBodies = new Map();
+
+  // ── Helpers ──
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function parseKey(raw) {
+    const parts = raw.split('.');
+    const npcRaw = parts[1] || '';
     return {
-      npc: parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'NPC',
-      raw: key
+      section: (parts[0] || '').toLowerCase(),
+      npc: npcRaw ? npcRaw.charAt(0).toUpperCase() + npcRaw.slice(1) : 'NPC',
+      raw
     };
   }
 
   function renderText(raw) {
     return raw
-      .replace(/<br\s*\/>/g, '<br/>')
-      .replace(/<username\/>/g, `<span class="username">${USERNAME}</span>`);
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      // restore the safe tags we actually want rendered
+      .replace(/&lt;br\s*\/&gt;/gi, '<br/>')
+      .replace(/&lt;username\/&gt;/gi, `<span class="username">${esc(USERNAME)}</span>`);
   }
 
-  // Returns a DocumentFragment — may contain multiple .dialog-entry boxes if <p/> is present
-  function buildEntry(key, text, delayIndex) {
-    const info = parseKey(key);
-    const fragment = document.createDocumentFragment();
+  // ── Fuzzy match ──
+  function fuzzyMatch(haystack, needle) {
+    const h = haystack.toLowerCase();
+    const n = needle.toLowerCase();
+    let ni = 0;
+    for (let i = 0; i < h.length && ni < n.length; i++) {
+      if (h[i] === n[ni]) ni++;
+    }
+    return ni === n.length;
+  }
 
-    const label = document.createElement('div');
-    label.className = 'dialog-label';
-    label.textContent = info.raw;
-    fragment.appendChild(label);
+  // ── Section filter ──
+  function rebuildSections() {
+    const seen = new Set();
+    allLines.forEach(line => {
+      const tab = line.indexOf('\t');
+      if (tab === -1) return;
+      const sec = (line.slice(0, tab).split('.')[0] || '').toLowerCase().trim();
+      if (sec) seen.add(sec);
+    });
+    allSections = [...seen].sort();
+    activeSections = new Set(allSections);
+    renderSectionBoxes();
+  }
 
-    // Split on <p/> — each segment becomes its own dialog box
-    const segments = text.split(/<p\s*\/>/i).map(s => s.trim()).filter(s => s);
+  function renderSectionBoxes() {
+    const wrap = document.getElementById('section-checkboxes');
+    wrap.innerHTML = '';
+    allSections.forEach(sec => {
+      const lbl = document.createElement('label');
+      lbl.className = 'sec-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = activeSections.has(sec);
+      cb.dataset.sec = sec;
+      cb.addEventListener('change', () => {
+        if (cb.checked) activeSections.add(sec); else activeSections.delete(sec);
+        rerunQuery();
+      });
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(' ' + sec));
+      wrap.appendChild(lbl);
+    });
+  }
 
-    segments.forEach((segment, segIndex) => {
-      const box = document.createElement('div');
-      box.className = 'dialog-entry';
-      box.style.animationDelay = `${(delayIndex + segIndex) * 55}ms`;
-      box.innerHTML = `
-        <div class="dialog-npc-name">${info.npc}</div>
-        <div class="dialog-body">${renderText(segment)}</div>
-      `;
-      fragment.appendChild(box);
+  function rerunQuery() {
+    const q = document.getElementById('line-input').value.trim();
+    if (q) showLines(q);
+  }
+
+  // ── Auto-resize textarea ──
+  function autoResize(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
+
+  // ── Build a single dialog box element ──
+  function buildBox(key, body, lineNum, segIdx, animDelay) {
+    const info  = parseKey(key);
+    const eid   = `${lineNum}-${segIdx}`;
+    originalBodies.set(eid, body);
+
+    const box = document.createElement('div');
+    box.className = 'dialog-entry';
+    box.dataset.lineNum = lineNum;
+    box.dataset.segIdx  = segIdx;
+    box.dataset.key     = key;
+    box.style.animationDelay = `${animDelay}ms`;
+
+    // NPC name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'dialog-npc-name';
+    nameEl.textContent = info.npc;
+    box.appendChild(nameEl);
+
+    if (editMode) {
+      const ta = document.createElement('textarea');
+      ta.className = 'body-textarea';
+      ta.value    = body;
+      ta.dataset.eid = eid;
+      ta.addEventListener('input', () => {
+        autoResize(ta);
+        onEdit(ta, lineNum, segIdx, key);
+      });
+      box.appendChild(ta);
+      requestAnimationFrame(() => autoResize(ta));
+    } else {
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'dialog-body';
+      if (!pSplitMode) {
+        // Single-box mode: show <p/> as a visible divider line
+        const segs = body.split(/<p\s*\/>/gi);
+        segs.forEach((seg, i) => {
+          if (i > 0) {
+            const hr = document.createElement('span');
+            hr.className = 'p-divider';
+            bodyEl.appendChild(hr);
+          }
+          const span = document.createElement('span');
+          span.innerHTML = renderText(seg.trim());
+          bodyEl.appendChild(span);
+        });
+      } else {
+        bodyEl.innerHTML = renderText(body);
+      }
+      box.appendChild(bodyEl);
+    }
+
+    return box;
+  }
+
+  // ── Build an entry group (label + one or more boxes) ──
+  function buildEntry(key, body, lineNum, delayOff) {
+    const frag = document.createDocumentFragment();
+
+    const lbl = document.createElement('div');
+    lbl.className = 'dialog-label';
+    lbl.dataset.labelFor = lineNum;
+    lbl.textContent = `#${lineNum}  ${key}`;
+    frag.appendChild(lbl);
+
+    if (pSplitMode) {
+      const segs = body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean);
+      segs.forEach((seg, si) => {
+        frag.appendChild(buildBox(key, seg, lineNum, si, (delayOff + si) * 50));
+      });
+    } else {
+      frag.appendChild(buildBox(key, body, lineNum, 0, delayOff * 50));
+    }
+
+    return frag;
+  }
+
+  // ── Edit tracking ──
+  function onEdit(ta, lineNum, segIdx, key) {
+    const eid      = `${lineNum}-${segIdx}`;
+    const original = originalBodies.get(eid) ?? '';
+    const current  = ta.value;
+    const changed  = current !== original;
+
+    ta.classList.toggle('modified', changed);
+
+    if (!pendingEdits.has(lineNum)) pendingEdits.set(lineNum, new Map());
+    const segs = pendingEdits.get(lineNum);
+    if (changed) segs.set(segIdx, current);
+    else {
+      segs.delete(segIdx);
+      if (segs.size === 0) pendingEdits.delete(lineNum);
+    }
+
+    // Update label badge
+    const lbl = document.querySelector(`.dialog-label[data-label-for="${lineNum}"]`);
+    if (lbl) {
+      const badge = lbl.querySelector('.modified-badge');
+      if (pendingEdits.has(lineNum)) {
+        if (!badge) {
+          const b = document.createElement('span');
+          b.className = 'modified-badge';
+          b.textContent = 'modified';
+          lbl.appendChild(b);
+        }
+      } else {
+        if (badge) badge.remove();
+      }
+    }
+
+    updateUnsavedBadge();
+    updateDiffPanel();
+  }
+
+  function updateUnsavedBadge() {
+    const n  = pendingEdits.size;
+    const el = document.getElementById('unsaved-badge');
+    const btn = document.getElementById('save-btn');
+    if (n > 0) {
+      el.textContent  = `${n} unsaved line${n > 1 ? 's' : ''}`;
+      btn.classList.add('has-changes');
+    } else {
+      el.textContent = '';
+      btn.classList.remove('has-changes');
+    }
+  }
+
+  function updateDiffPanel() {
+    const panel   = document.getElementById('diff-panel');
+    const content = document.getElementById('diff-content');
+
+    if (pendingEdits.size === 0) {
+      panel.classList.remove('visible');
+      return;
+    }
+
+    panel.classList.add('visible');
+    content.innerHTML = '';
+
+    pendingEdits.forEach((segs, lineNum) => {
+      segs.forEach((newText, segIdx) => {
+        const eid      = `${lineNum}-${segIdx}`;
+        const original = originalBodies.get(eid) ?? '';
+        const boxEl    = document.querySelector(`.dialog-entry[data-line-num="${lineNum}"][data-seg-idx="${segIdx}"]`);
+        const key      = boxEl ? boxEl.dataset.key : `line ${lineNum}`;
+
+        const entry = document.createElement('div');
+        entry.className = 'diff-entry';
+        entry.innerHTML =
+          `<div class="diff-key">#${lineNum} &nbsp;·&nbsp; ${esc(key)}${segs.size > 1 ? ' &nbsp;·&nbsp; seg ' + segIdx : ''}</div>` +
+          `<div class="diff-row"><span class="diff-lbl">Original:</span><span class="diff-old">${esc(original)}</span></div>` +
+          `<div class="diff-row"><span class="diff-lbl">Modified:</span><span class="diff-new">${esc(newText)}</span></div>`;
+        content.appendChild(entry);
+      });
+    });
+  }
+
+  // ── Save ──
+  async function saveAll() {
+    if (pendingEdits.size === 0) return;
+
+    const changes = [];
+    pendingEdits.forEach((_, lineNum) => {
+      const boxes = [...document.querySelectorAll(`.dialog-entry[data-line-num="${lineNum}"]`)]
+        .sort((a,b) => Number(a.dataset.segIdx) - Number(b.dataset.segIdx));
+      if (!boxes.length) return;
+
+      const key  = boxes[0].dataset.key;
+      const segs = [];
+      boxes.forEach(bx => {
+        const si = Number(bx.dataset.segIdx);
+        const ta = bx.querySelector('.body-textarea');
+        segs[si]  = ta ? ta.value : (originalBodies.get(`${lineNum}-${si}`) ?? '');
+      });
+
+      const body = pSplitMode ? segs.join('<p/>') : (segs[0] ?? '');
+      changes.push({ lineNumber: lineNum, rawLine: key + '\t' + body });
     });
 
-    return fragment;
+    try {
+      const res = await fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ changes })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+
+      // Sync cache & originalBodies
+      changes.forEach(({ lineNumber, rawLine }) => {
+        allLines[lineNumber - 1] = rawLine;
+        const tab  = rawLine.indexOf('\t');
+        const body = tab === -1 ? '' : rawLine.slice(tab + 1);
+        const segs = pSplitMode
+          ? body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean)
+          : [body];
+        segs.forEach((seg, si) => originalBodies.set(`${lineNumber}-${si}`, seg));
+      });
+
+      pendingEdits.clear();
+      document.querySelectorAll('.body-textarea.modified').forEach(ta => ta.classList.remove('modified'));
+      document.querySelectorAll('.modified-badge').forEach(b => b.remove());
+      updateUnsavedBadge();
+      updateDiffPanel();
+      flashReload();
+    } catch (e) {
+      alert('Save failed: ' + e.message);
+    }
   }
 
-  function setStatus(msg) {
-    document.getElementById('dialog-list').innerHTML = `<div id="status">${msg}</div>`;
-  }
-
-  // Fetch and cache all lines. Returns true on success.
+  // ── Fetch file ──
   async function fetchLines() {
     try {
-      const res = await fetch('/dialog.txt?t=' + Date.now());
+      const res  = await fetch('/dialog.txt?t=' + Date.now());
       if (!res.ok) throw new Error();
-      const text = await res.text();
-      // Keep all lines including blank ones so line numbers stay accurate.
-      allLines = text.split('\n');
+      allLines = (await res.text()).split('\n');
+      rebuildSections();
       return true;
-    } catch (e) {
-      setStatus('⚠ Could not load dialog.txt');
+    } catch {
+      setStatus('&#9888; Could not load npc.japan.txt');
       return false;
     }
   }
 
-  // Parse the input string and show the requested line(s).
+  function setStatus(html) {
+    document.getElementById('dialog-list').innerHTML = `<div id="status">${html}</div>`;
+  }
+
+  // ── Main render ──
   function showLines(query) {
-    if (!allLines) { setStatus('⚠ File not loaded yet.'); return; }
+    if (!allLines) { setStatus('&#9888; File not loaded yet.'); return; }
 
     const container = document.getElementById('dialog-list');
     container.innerHTML = '';
-
     const q = query.trim();
-    let start, end;
+
+    let entries = [];
+    let truncated = false;
 
     if (/^\d+-\d+$/.test(q)) {
-      // Range: "86-90"
-      [start, end] = q.split('-').map(Number);
+      // ── Range ──
+      let [a, b] = q.split('-').map(Number);
+      if (a > b) [a, b] = [b, a];
+      for (let n = a; n <= b; n++) {
+        const line = allLines[n - 1];
+        if (line === undefined) { setStatus(`Line ${n} is out of range (file has ${allLines.length} lines).`); return; }
+        const tab = line.indexOf('\t');
+        if (tab === -1) continue;
+        const key = line.slice(0, tab).trim();
+        if (activeSections.size && !activeSections.has(key.split('.')[0].toLowerCase())) continue;
+        entries.push({ lineNum: n, key, body: line.slice(tab + 1).trim() });
+      }
+
     } else if (/^\d+$/.test(q)) {
-      // Single line: "86"
-      start = end = Number(q);
+      // ── Single line ──
+      const n    = Number(q);
+      const line = allLines[n - 1];
+      if (!line) { setStatus(`Line ${n} is out of range.`); return; }
+      const tab = line.indexOf('\t');
+      if (tab !== -1) {
+        const key = line.slice(0, tab).trim();
+        if (!activeSections.size || activeSections.has(key.split('.')[0].toLowerCase())) {
+          entries.push({ lineNum: n, key, body: line.slice(tab + 1).trim() });
+        }
+      }
+
     } else {
-      setStatus('Invalid input. Use a line number like <b>86</b> or a range like <b>86-90</b>.');
-      return;
+      // ── Fuzzy text search ──
+      const MAX = 100;
+      for (let i = 0; i < allLines.length; i++) {
+        const line = allLines[i];
+        const tab  = line.indexOf('\t');
+        if (tab === -1) continue;
+        const key  = line.slice(0, tab).trim();
+        const body = line.slice(tab + 1).trim();
+        if (activeSections.size && !activeSections.has(key.split('.')[0].toLowerCase())) continue;
+        if (!fuzzyMatch(key + ' ' + body, q)) continue;
+        entries.push({ lineNum: i + 1, key, body });
+        if (entries.length > MAX) { truncated = true; entries.pop(); break; }
+      }
     }
 
-    if (start > end) [start, end] = [end, start];
-
-    const entries = [];
-    for (let n = start; n <= end; n++) {
-      const line = allLines[n - 1]; // convert to 0-based
-      if (line === undefined) {
-        container.innerHTML += `<div id="status">Line ${n} is out of range (file has ${allLines.length} lines).</div>`;
-        return;
-      }
-      const tab = line.indexOf('\t');
-      if (tab === -1) continue; // blank or non-dialog line — skip silently
-      const key  = line.slice(0, tab).trim();
-      const body = line.slice(tab + 1).trim();
-      entries.push({ key, body });
+    if (truncated) {
+      const note = document.createElement('div');
+      note.id = 'status';
+      note.style.cssText = 'margin-bottom:10px;text-align:left;padding:8px 0;';
+      note.textContent = `Showing first 100 matches — refine your search for fewer results.`;
+      container.appendChild(note);
     }
 
     if (!entries.length) {
-      setStatus(`No dialog found on line${start === end ? '' : 's'} ${q}.`);
+      setStatus(`No dialog found for &ldquo;<b>${esc(q)}</b>&rdquo;.`);
       return;
     }
 
-    entries.forEach(({ key, body }, i) => container.appendChild(buildEntry(key, body, i)));
+    entries.forEach(({ lineNum, key, body }, i) => {
+      container.appendChild(buildEntry(key, body, lineNum, i));
+    });
   }
 
+  // ── Flash ──
   function flashReload() {
     const el = document.getElementById('reload-flash');
     el.classList.add('show');
     setTimeout(() => el.classList.remove('show'), 1200);
   }
 
-  // Wire up the button and Enter key
+  // ── Wire up controls ──
   document.getElementById('load-btn').addEventListener('click', () => {
     showLines(document.getElementById('line-input').value);
   });
-  document.getElementById('line-input').addEventListener('keydown', (e) => {
+  document.getElementById('line-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') showLines(e.target.value);
   });
 
-  // SSE live-reload: re-fetch file and re-run the current query
+  document.getElementById('p-mode-btn').addEventListener('click', () => {
+    pSplitMode = !pSplitMode;
+    pendingEdits.clear(); // clear edits to avoid seg-index confusion on mode switch
+    updateUnsavedBadge();
+    updateDiffPanel();
+    const btn = document.getElementById('p-mode-btn');
+    btn.classList.toggle('active', pSplitMode);
+    btn.innerHTML = pSplitMode ? '&#x229E; Split on &lt;p&gt;' : '&#x2630; Merge &lt;p&gt;';
+    rerunQuery();
+  });
+
+  document.getElementById('edit-mode-btn').addEventListener('click', () => {
+    editMode = !editMode;
+    const btn = document.getElementById('edit-mode-btn');
+    btn.classList.toggle('active', editMode);
+    btn.innerHTML = editMode ? '&#x270E; Edit Mode' : '&#x1F441; View Mode';
+    rerunQuery();
+  });
+
+  document.getElementById('save-btn').addEventListener('click', saveAll);
+
+  document.getElementById('diff-close').addEventListener('click', () => {
+    document.getElementById('diff-panel').classList.remove('visible');
+  });
+
+  document.getElementById('sel-all').addEventListener('click', () => {
+    activeSections = new Set(allSections);
+    document.querySelectorAll('#section-checkboxes input').forEach(cb => cb.checked = true);
+    rerunQuery();
+  });
+
+  document.getElementById('sel-none').addEventListener('click', () => {
+    activeSections = new Set();
+    document.querySelectorAll('#section-checkboxes input').forEach(cb => cb.checked = false);
+    rerunQuery();
+  });
+
+  // ── SSE live reload ──
   const evtSource = new EventSource('/events');
-  evtSource.onmessage = async (e) => {
-    if (e.data === 'reload') {
-      await fetchLines();
-      const q = document.getElementById('line-input').value.trim();
-      if (q) showLines(q);
-      flashReload();
-    }
+  evtSource.onmessage = async e => {
+    if (e.data !== 'reload') return;
+    await fetchLines();
+    rerunQuery();
+    flashReload();
   };
-  // If SSE drops, fall back to polling — but only start one interval ever
   let pollingStarted = false;
   evtSource.onerror = () => {
     if (pollingStarted) return;
     pollingStarted = true;
     evtSource.close();
-    setInterval(async () => {
-      await fetchLines();
-      const q = document.getElementById('line-input').value.trim();
-      if (q) showLines(q);
-    }, 2000);
+    setInterval(async () => { await fetchLines(); rerunQuery(); }, 2000);
   };
 
-  // Pre-load the file on page start so the first query is instant
   fetchLines();
 </script>
 </body>

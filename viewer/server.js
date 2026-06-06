@@ -37,6 +37,35 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // POST /save — write edited lines back to npc.japan.txt
+  if (req.method === 'POST' && req.url === '/save') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { changes } = JSON.parse(body);
+        let content = fs.readFileSync(DIALOG_FILE, 'utf8');
+        const hasBOM = content.charCodeAt(0) === 0xFEFF;
+        if (hasBOM) content = content.slice(1);
+        const lineEnding = content.includes('\r\n') ? '\r\n' : '\n';
+        const lines = content.split(/\r?\n/);
+        changes.forEach(({ lineNumber, rawLine }) => {
+          if (lineNumber >= 1 && lineNumber <= lines.length) {
+            lines[lineNumber - 1] = rawLine;
+          }
+        });
+        fs.writeFileSync(DIALOG_FILE, (hasBOM ? '﻿' : '') + lines.join(lineEnding), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        console.error('[mabi-viewer] Save error:', e.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
   // Serve dialog.txt as plain text
   if (req.url.startsWith('/dialog.txt')) {
     fs.readFile(DIALOG_FILE, 'utf8', (err, data) => {
