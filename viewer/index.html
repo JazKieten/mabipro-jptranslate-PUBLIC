@@ -802,7 +802,7 @@
   // ── Build entry: label + one box per <p/> segment ──
   function buildEntry(key, body, lineNum, delayOff) {
     const frag = document.createDocumentFragment();
-    const segs = body.split(/<p\s*\/>/gi).map(s => s.trim())
+    const segs = body.split(/<p\s*\/>/gi)
       .filter(s => s && prepareForEdit(s).display.trim().length > 0);
     if (!segs.length) return frag;
     const lbl = document.createElement('div');
@@ -936,7 +936,7 @@
         allLines[lineNumber - 1] = rawLine;
         const t    = rawLine.indexOf('\t');
         const body = t === -1 ? '' : rawLine.slice(t + 1);
-        const segs = body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean);
+        const segs = body.split(/<p\s*\/>/gi).filter(s => prepareForEdit(s).display.trim().length > 0);
         segs.forEach((seg, si) => {
           const pr = prepareForEdit(seg);
           originalBodies.set(`${lineNumber}-${si}`, {
