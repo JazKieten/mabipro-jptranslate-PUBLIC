@@ -242,6 +242,90 @@
       letter-spacing: 0.03em;
     }
 
+    /* ── Tag chips (non-translatable tags shown above textarea) ── */
+    .tag-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding-bottom: 6px;
+    }
+    .tag-chip {
+      font-size: 0.58rem;
+      color: rgba(255,255,255,0.38);
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: monospace;
+      cursor: default;
+      white-space: nowrap;
+    }
+    .tag-chip:hover { color: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.2); }
+
+    /* ── Translatable tag fields (button / inputbox / selectitem) ── */
+    .tag-fields {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .tag-field-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+    .tag-field-badge {
+      font-size: 0.55rem;
+      font-weight: bold;
+      color: rgba(160,200,255,0.75);
+      background: rgba(80,130,200,0.18);
+      border: 1px solid rgba(100,150,220,0.28);
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      font-family: monospace;
+      letter-spacing: 0.04em;
+    }
+    .tag-field-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+    .tag-field-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.3);
+    }
+    .tag-field-input {
+      flex: 1;
+      min-width: 0;
+      background: rgba(0,0,0,0.2);
+      border: 1px dashed rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.82);
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .tag-field-input:focus { border-color: rgba(160,220,140,0.35); background: rgba(255,255,255,0.04); }
+    .tag-field-input.mod { border-color: rgba(100,190,80,0.5); }
+    .tag-field-meta {
+      font-size: 0.58rem;
+      color: rgba(255,255,255,0.22);
+      font-family: monospace;
+      padding: 2px 0;
+      align-self: center;
+    }
+
     /* ── Dialog box ── */
     .dbox {
       background-image: url('/media/textbox_bg.jpg');
@@ -468,7 +552,7 @@
   const PAGE_SIZE    = 100;
 
   const pendingEdits   = new Map();   // lineNum → Map<segIdx, newDisplay>
-  const originalBodies = new Map();   // "ln-si" → { display, hiddenTags, raw }
+  const originalBodies = new Map();   // "ln-si" → { display, tagPositions, translatableTags, raw }
 
   // ── Utility ──
   function esc(s) {
@@ -490,30 +574,148 @@
   // ── Tag handling ──
   const TAG_RE = () => /<\/?[a-zA-Z][^>]*\/?>/g;
 
-  // Strip tags, convert <br/> → \n, collect everything else as hiddenTags
+  // <username/> and its common typos in the source file
+  const USERNAME_RE = /^<(username|usermame|usernname|userneme|usernane|useranme|suername|sername)\s*\/>/i;
+  const isUsernameTag    = tag => USERNAME_RE.test(tag);
+  const isTranslatableTag = tag => /^<(button|inputbox|selectitem)[\s>\/]/i.test(tag);
+
+  // Extract { attrName: value } pairs from a tag string
+  function parseTagAttrs(tag) {
+    const attrs = {};
+    const re = /\b(\w+)=(['"])([^'"]*)\2/g;
+    let m;
+    while ((m = re.exec(tag)) !== null) attrs[m[1]] = m[3];
+    return attrs;
+  }
+
+  // Replace one attribute value in a tag string, preserving surrounding structure
+  function updateTagAttr(tag, attrName, newValue) {
+    return tag.replace(
+      new RegExp(`\\b(${attrName}=)(['"])([^'"]*)\\2`, 'i'),
+      (_, attr, q) => attr + q + newValue + q
+    );
+  }
+
+  // prepareForEdit — returns:
+  //   display        : text with <br/>→\n, <username/>→[NAME], other tags removed
+  //   tagPositions   : [{pos, tag}] — non-translatable tags at character positions in display
+  //   translatableTags: [{tag, type, attrs}] — button/inputbox/selectitem tags
   function prepareForEdit(rawSeg) {
-    const hiddenTags = [];
+    const tagPositions    = [];
+    const translatableTags = [];
     const parts = [];
     const re = TAG_RE();
-    let last = 0, m;
+    let last = 0, m, displayPos = 0;
+
     while ((m = re.exec(rawSeg)) !== null) {
-      if (m.index > last) parts.push(rawSeg.slice(last, m.index));
+      if (m.index > last) {
+        const text = rawSeg.slice(last, m.index);
+        parts.push(text);
+        displayPos += text.length;
+      }
       const tag = m[0];
       if (/^<br[\s/>]/i.test(tag)) {
         parts.push('\n');
+        displayPos += 1;
+      } else if (isUsernameTag(tag)) {
+        parts.push('[NAME]');
+        displayPos += 6;
+      } else if (isTranslatableTag(tag)) {
+        const type = tag.match(/^<([a-zA-Z]+)/)[1].toLowerCase();
+        translatableTags.push({ tag, type, attrs: parseTagAttrs(tag) });
       } else {
-        hiddenTags.push(tag);
+        tagPositions.push({ pos: displayPos, tag });
       }
       last = re.lastIndex;
     }
     if (last < rawSeg.length) parts.push(rawSeg.slice(last));
-    return { display: parts.join('').trim(), hiddenTags };
+
+    const display    = parts.join('');
+    const adjustedPositions = tagPositions;
+
+    return { display, tagPositions: adjustedPositions, translatableTags };
   }
 
-  // Reconstruct raw segment from edited display text + preserved hidden tags
-  function reconstruct(display, hiddenTags) {
-    const body = display.replace(/\n/g, '<br/>');
-    return hiddenTags.length ? body + hiddenTags.join('') : body;
+  // reconstruct — reinserts positioned tags at their original character offsets,
+  // converts [NAME]→<username/> and \n→<br/>, then appends translatable tags
+  function reconstruct(display, tagPositions, translatableTags) {
+    const sorted = [...(tagPositions || [])].sort((a, b) => a.pos - b.pos);
+    let ti = 0, result = '';
+
+    for (let i = 0; i <= display.length; i++) {
+      while (ti < sorted.length && sorted[ti].pos === i) result += sorted[ti++].tag;
+      if (i === display.length) break;
+      if (display.slice(i, i + 6) === '[NAME]') { result += '<username/>'; i += 5; continue; }
+      if (display[i] === '\n')                   { result += '<br/>';       continue; }
+      result += display[i];
+    }
+    while (ti < sorted.length) result += sorted[ti++].tag;
+    (translatableTags || []).forEach(tt => { result += tt.tag; });
+    return result;
+  }
+
+  // Build read-only chip row for non-translatable positioned tags
+  function buildChipRow(tagPositions) {
+    if (!tagPositions || !tagPositions.length) return null;
+    const row = document.createElement('div');
+    row.className = 'tag-chips';
+    tagPositions.forEach(({ tag }) => {
+      const type  = (tag.match(/^<\/?([a-zA-Z]+)/) || [])[1]?.toLowerCase() || '?';
+      const attrs = parseTagAttrs(tag);
+      const nameMap = { face: 'face', npcportrait: 'portrait', title: 'title', image: 'img',
+                        repair: 'repair', upgrade: 'upgrade', hotkey: 'key',
+                        music: 'music', movie: 'movie', show: 'show', listbox: 'listbox' };
+      const base  = nameMap[type] || type;
+      const val   = attrs.name || attrs.item || null;
+      const label = val && val !== 'NONE' ? `${base}: ${val}` : base;
+      const chip  = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.title     = tag;
+      chip.textContent = label;
+      row.appendChild(chip);
+    });
+    return row;
+  }
+
+  // Build editable fields for button / inputbox / selectitem tags
+  function buildTranslatableFields(translatableTags, onTagEdit) {
+    if (!translatableTags || !translatableTags.length) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'tag-fields';
+    translatableTags.forEach((tt, idx) => {
+      const row   = document.createElement('div');
+      row.className = 'tag-field-row';
+      const badge = document.createElement('span');
+      badge.className   = 'tag-field-badge';
+      badge.textContent = tt.type === 'button' ? 'BTN' : tt.type === 'inputbox' ? 'INPUT' : 'SELECT';
+      row.appendChild(badge);
+      const fields = document.createElement('div');
+      fields.className = 'tag-field-inputs';
+      ['title', 'caption'].forEach(attr => {
+        if (tt.attrs[attr] === undefined) return;
+        const lbl = document.createElement('label');
+        lbl.className = 'tag-field-label';
+        lbl.textContent = attr + ':';
+        const inp = document.createElement('input');
+        inp.className        = 'tag-field-input';
+        inp.type             = 'text';
+        inp.value            = tt.attrs[attr];
+        inp.dataset.tagIdx   = idx;
+        inp.dataset.tagAttr  = attr;
+        inp.addEventListener('input', onTagEdit);
+        lbl.appendChild(inp);
+        fields.appendChild(lbl);
+      });
+      if (tt.type === 'button' && tt.attrs.keyword) {
+        const kw = document.createElement('span');
+        kw.className   = 'tag-field-meta';
+        kw.textContent = tt.attrs.keyword;
+        fields.appendChild(kw);
+      }
+      row.appendChild(fields);
+      wrap.appendChild(row);
+    });
+    return wrap;
   }
 
   // ── Section filter ──
@@ -565,11 +767,16 @@
 
   // ── Build a single dialog box ──
   function buildBox(key, segBody, lineNum, segIdx, delay) {
-    const info = parseKey(key);
-    const eid  = `${lineNum}-${segIdx}`;
-
+    const info     = parseKey(key);
+    const eid      = `${lineNum}-${segIdx}`;
     const prepared = prepareForEdit(segBody);
-    originalBodies.set(eid, { display: prepared.display, hiddenTags: prepared.hiddenTags, raw: segBody });
+
+    originalBodies.set(eid, {
+      display:          prepared.display,
+      tagPositions:     prepared.tagPositions,
+      translatableTags: prepared.translatableTags,
+      raw:              segBody
+    });
 
     const box = document.createElement('div');
     box.className = 'dbox';
@@ -583,12 +790,24 @@
     nameEl.textContent = info.npc;
     box.appendChild(nameEl);
 
+    // Non-translatable tag chips (above textarea)
+    const chipRow = buildChipRow(prepared.tagPositions);
+    if (chipRow) box.appendChild(chipRow);
+
+    // Main editable textarea
     const ta = document.createElement('textarea');
     ta.className = 'dbox-ta';
     ta.value     = prepared.display;
     ta.addEventListener('input', () => { autoResize(ta); onEdit(ta, lineNum, segIdx, key); });
     box.appendChild(ta);
     requestAnimationFrame(() => autoResize(ta));
+
+    // Translatable tag fields (below textarea)
+    const tagFields = buildTranslatableFields(
+      prepared.translatableTags,
+      () => onEdit(ta, lineNum, segIdx, key, true)
+    );
+    if (tagFields) box.appendChild(tagFields);
 
     return box;
   }
@@ -609,11 +828,11 @@
   }
 
   // ── Edit tracking ──
-  function onEdit(ta, lineNum, segIdx, key) {
+  function onEdit(ta, lineNum, segIdx, key, tagChanged = false) {
     const eid  = `${lineNum}-${segIdx}`;
     const orig = originalBodies.get(eid)?.display ?? '';
     const cur  = ta.value;
-    const diff = cur !== orig;
+    const diff = cur !== orig || tagChanged;
 
     ta.classList.toggle('mod', diff);
 
@@ -699,7 +918,15 @@
         const ta = bx.querySelector('.dbox-ta');
         const ob = originalBodies.get(`${lineNum}-${si}`);
         const displayText = ta ? ta.value : (ob?.display ?? '');
-        segs[si] = reconstruct(displayText, ob?.hiddenTags ?? []);
+        // Collect updated translatable tag values from the DOM inputs
+        const updatedTags = (ob?.translatableTags || []).map((tt, idx) => {
+          let updatedTag = tt.tag;
+          bx.querySelectorAll(`.tag-field-input[data-tag-idx="${idx}"]`).forEach(inp => {
+            updatedTag = updateTagAttr(updatedTag, inp.dataset.tagAttr, inp.value);
+          });
+          return { ...tt, tag: updatedTag };
+        });
+        segs[si] = reconstruct(displayText, ob?.tagPositions ?? [], updatedTags);
       });
 
       // Join segments with <p/> (regardless of current pSplitMode — always split was used for edit)
@@ -723,7 +950,12 @@
         const segs = body.split(/<p\s*\/>/gi).map(s => s.trim()).filter(Boolean);
         segs.forEach((seg, si) => {
           const pr = prepareForEdit(seg);
-          originalBodies.set(`${lineNumber}-${si}`, { display: pr.display, hiddenTags: pr.hiddenTags, raw: seg });
+          originalBodies.set(`${lineNumber}-${si}`, {
+            display:          pr.display,
+            tagPositions:     pr.tagPositions,
+            translatableTags: pr.translatableTags,
+            raw:              seg
+          });
         });
       });
 
