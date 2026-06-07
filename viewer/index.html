@@ -53,33 +53,30 @@
       padding: 0 28px;
     }
 
-    /* ── Branding ── */
-    #branding {
-      padding: 14px 0 10px;
-      border-bottom: 1px solid var(--hdr-border);
+    /* ── Single header row ── */
+    #header-top {
       display: flex;
-      align-items: baseline;
-      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 0;
+    }
+    #hdr-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #hdr-right {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
     }
     #branding-logo {
       height: 36px;
       width: auto;
       display: block;
-    }
-    #branding .subtitle {
-      font-size: 0.68rem;
-      color: var(--hdr-dim);
-      letter-spacing: 0.04em;
-      font-style: italic;
-    }
-
-    /* ── Toolbar ── */
-    #toolbar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--hdr-border);
+      flex-shrink: 0;
     }
     .t-sep {
       width: 1px;
@@ -97,7 +94,7 @@
       color: #88a870;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 11px;
-      padding: 4px 10px;
+      padding: 5px 9px;
       cursor: pointer;
       border-radius: var(--radius);
       transition: border-color .15s, color .15s, background .15s;
@@ -110,30 +107,34 @@
     #save-btn.lit  { background: #2a5020; border-color: #58a040; color: #90d870; }
     #unsaved {
       font-size: 11px;
-      color: #80b860;
+      color: var(--hdr-muted);
       margin-left: 2px;
-      opacity: 0;
-      transition: opacity .2s;
-      cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      transition: color .2s;
+      cursor: default;
       background: none;
       border: none;
       font-family: inherit;
       padding: 0;
+      white-space: nowrap;
     }
-    #unsaved:hover { color: #a0d880; }
-    #unsaved.show { opacity: 1; }
+    #unsaved.show {
+      color: #80b860;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    #unsaved.show:hover { color: #a0d880; }
 
     /* ── Search ── */
     #search-row {
       display: flex;
       gap: 7px;
-      padding: 9px 0 8px;
-      border-bottom: 1px solid var(--hdr-border);
+      flex: 0 1 360px;
+      min-width: 0;
     }
     #line-input {
       flex: 1;
+      min-width: 60px;
       background: #132a12;
       border: 1px solid #2a4828;
       color: #c8ddb8;
@@ -152,39 +153,32 @@
       color: #78a068;
       font-family: Tahoma, Arial, sans-serif;
       font-size: 12px;
-      padding: 6px 16px;
+      padding: 5px 9px;
       cursor: pointer;
       border-radius: var(--radius);
       transition: border-color .15s, color .15s;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      min-width: 0;
     }
     #search-btn:hover { border-color: #5a8040; color: #a0c880; }
 
-    /* ── Section filter ── */
-    #sec-filter {
-      border-bottom: 1px solid var(--hdr-border);
+    /* ── Filter button in toolbar ── */
+    #header.filter-open #sec-summary { background: #2a4820; border-color: #5a8040; color: #a0c880; }
+
+    /* ── Responsive: hide logo + shrink search on narrow windows ── */
+    @media (max-width: 500px) {
+      #branding-logo { display: none; }
     }
-    #sec-summary {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 0 6px;
-      cursor: pointer;
-      user-select: none;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--hdr-dim);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      transition: color .15s;
-    }
-    #sec-summary:hover { color: var(--hdr-dim); }
-    #sec-arrow { font-size: 0.55rem; transition: transform .2s; }
-    #sec-filter.open #sec-arrow { transform: rotate(90deg); }
+
+    /* ── Section filter dropdown ── */
     #sec-body {
       display: none;
+      border-top: 1px solid var(--hdr-border);
       padding: 6px 0 10px;
     }
-    #sec-filter.open #sec-body { display: block; }
+    #header.filter-open #sec-body { display: block; }
     #sec-actions {
       display: flex;
       gap: 12px;
@@ -494,35 +488,28 @@
 <body>
 
 <div id="header">
-  <div id="branding">
-    <img src="/media/MSS_Logo.png" alt="MabiScript Studio" id="branding-logo" />
-    <span class="subtitle">An editing and preview environment for Mabinogi Dialogue</span>
-  </div>
-
-  <div id="toolbar">
-    <button id="save-btn" class="tbtn" title="Save all changes to npc.japan.txt">&#x2191;&ensp;Save</button>
-    <button id="unsaved"></button>
-  </div>
-
-  <div id="search-row">
-    <input id="line-input" type="text"
-      placeholder="Line # (86), range (86–90), or search text…"
-      autocomplete="off" spellcheck="false" />
-    <button id="search-btn">Search</button>
-  </div>
-
-  <div id="sec-filter">
-    <div id="sec-summary" onclick="toggleSecFilter()">
-      <span id="sec-arrow">&#x25B6;</span>
-      <span>Filter by Section</span>
+  <div id="header-top">
+    <div id="hdr-left">
+      <img src="/media/MSS_Logo.png" alt="MabiScript Studio" id="branding-logo" />
+      <button id="save-btn" class="tbtn" title="Save all changes to npc.japan.txt"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,5 7,2 10,5"/><line x1="7" y1="2" x2="7" y2="10"/><line x1="2" y1="12" x2="12" y2="12"/></svg></button>
+      <button id="unsaved">All saved</button>
     </div>
-    <div id="sec-body">
-      <div id="sec-actions">
-        <button class="sec-act" id="sel-all">Select all</button>
-        <button class="sec-act" id="sel-none">Deselect all</button>
+    <div id="hdr-right">
+      <div id="search-row">
+        <input id="line-input" type="text"
+          placeholder="Line # (86), range (86–90), or search text…"
+          autocomplete="off" spellcheck="false" />
+        <button id="search-btn" title="Search"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="5.5" r="4"/><line x1="8.5" y1="8.5" x2="13" y2="13"/></svg></button>
       </div>
-      <div id="sec-boxes"></div>
+      <button id="sec-summary" class="tbtn" title="Filter by section" onclick="toggleSecFilter()"><svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><path d="M1 2h12L9 7v5l-4-2V7z"/></svg></button>
     </div>
+  </div>
+  <div id="sec-body">
+    <div id="sec-actions">
+      <button class="sec-act" id="sel-all">Select all</button>
+      <button class="sec-act" id="sel-none">Deselect all</button>
+    </div>
+    <div id="sec-boxes"></div>
   </div>
 </div>
 
@@ -618,7 +605,7 @@
         parts.push('\n');
         displayPos += 1;
       } else if (isUsernameTag(tag)) {
-        parts.push('[NAME]');
+        parts.push('【NAME】');
         displayPos += 6;
       } else if (isTranslatableTag(tag)) {
         const type = tag.match(/^<([a-zA-Z]+)/)[1].toLowerCase();
@@ -645,7 +632,7 @@
     for (let i = 0; i <= display.length; i++) {
       while (ti < sorted.length && sorted[ti].pos === i) result += sorted[ti++].tag;
       if (i === display.length) break;
-      if (display.slice(i, i + 6) === '[NAME]') { result += '<username/>'; i += 5; continue; }
+      if (display.slice(i, i + 6) === '【NAME】') { result += '<username/>'; i += 5; continue; }
       if (display[i] === '\n')                   { result += '<br/>';       continue; }
       result += display[i];
     }
@@ -756,7 +743,7 @@
   }
 
   function toggleSecFilter() {
-    document.getElementById('sec-filter').classList.toggle('open');
+    document.getElementById('header').classList.toggle('filter-open');
   }
 
   // ── Auto-resize textarea ──
@@ -856,7 +843,6 @@
     }
 
     refreshUnsaved();
-    refreshDiff();
   }
 
   function refreshUnsaved() {
@@ -868,36 +854,39 @@
       el.classList.add('show');
       btn.classList.add('lit');
     } else {
+      el.textContent = 'All saved';
       el.classList.remove('show');
       btn.classList.remove('lit');
     }
   }
 
   function refreshDiff() {
-    const panel   = document.getElementById('diff-panel');
     const content = document.getElementById('diff-content');
+    if (!pendingEdits.size) { closeDiffPanel(); return; }
 
-    if (!pendingEdits.size) { panel.classList.remove('up'); return; }
-
-    panel.classList.add('up');
-    content.innerHTML = '';
-
+    const entries = [];
     pendingEdits.forEach((segsMap, lineNum) => {
       segsMap.forEach((newText, segIdx) => {
-        const eid  = `${lineNum}-${segIdx}`;
-        const orig = originalBodies.get(eid)?.display ?? '';
-        const boxEl = document.querySelector(`.dbox[data-ln="${lineNum}"][data-si="${segIdx}"]`);
-        const key   = boxEl?.dataset.key ?? `line ${lineNum}`;
-
-        const item = document.createElement('div');
-        item.className = 'diff-item';
-        item.innerHTML =
-          `<div class="diff-key">#${lineNum}&ensp;·&ensp;${esc(key)}${segsMap.size > 1 ? `&ensp;·&ensp;seg ${segIdx}` : ''}</div>` +
-          `<div class="diff-row"><span class="diff-lbl">Before:</span><span class="diff-old">${esc(orig) || '<em style="opacity:.4">empty</em>'}</span></div>` +
-          `<div class="diff-row"><span class="diff-lbl">After:</span><span class="diff-new">${esc(newText) || '<em style="opacity:.4">empty</em>'}</span></div>`;
-        content.appendChild(item);
+        entries.push({ lineNum, segIdx, segsMap, newText });
       });
     });
+
+    content.innerHTML = '';
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const { lineNum, segIdx, segsMap, newText } = entries[i];
+      const eid   = `${lineNum}-${segIdx}`;
+      const orig  = originalBodies.get(eid)?.display ?? '';
+      const boxEl = document.querySelector(`.dbox[data-ln="${lineNum}"][data-si="${segIdx}"]`);
+      const key   = boxEl?.dataset.key ?? `line ${lineNum}`;
+
+      const item = document.createElement('div');
+      item.className = 'diff-item';
+      item.innerHTML =
+        `<div class="diff-key">#${lineNum}&ensp;·&ensp;${esc(key)}${segsMap.size > 1 ? `&ensp;·&ensp;seg ${segIdx}` : ''}</div>` +
+        `<div class="diff-row"><span class="diff-lbl">Before:</span><span class="diff-old">${esc(orig) || '<em style="opacity:.4">empty</em>'}</span></div>` +
+        `<div class="diff-row"><span class="diff-lbl">After:</span><span class="diff-new">${esc(newText) || '<em style="opacity:.4">empty</em>'}</span></div>`;
+      content.appendChild(item);
+    }
   }
 
   // ── Save ──
@@ -1109,8 +1098,32 @@
   document.getElementById('line-input').addEventListener('keydown', e => { if (e.key === 'Enter') { currentPage = 1; showLines(e.target.value); } });
 
   document.getElementById('save-btn').addEventListener('click', saveAll);
-  document.getElementById('unsaved').addEventListener('click', () => { refreshDiff(); document.getElementById('diff-panel').classList.add('up'); });
-  document.getElementById('diff-x').addEventListener('click', () => document.getElementById('diff-panel').classList.remove('up'));
+
+  // ── Diff panel open / close / click-outside ──
+  let _diffOutsideActive = false;
+  function openDiffPanel() {
+    document.getElementById('diff-panel').classList.add('up');
+    if (_diffOutsideActive) return;
+    _diffOutsideActive = true;
+    setTimeout(() => {
+      function onOut(e) {
+        const panel = document.getElementById('diff-panel');
+        const btn   = document.getElementById('unsaved');
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+          panel.classList.remove('up');
+          document.removeEventListener('click', onOut);
+          _diffOutsideActive = false;
+        }
+      }
+      document.addEventListener('click', onOut);
+    }, 0);
+  }
+  function closeDiffPanel() {
+    document.getElementById('diff-panel').classList.remove('up');
+  }
+  document.getElementById('unsaved').addEventListener('click', () => { refreshDiff(); openDiffPanel(); });
+  document.getElementById('diff-x').addEventListener('click', closeDiffPanel);
+
 
   document.getElementById('sel-all').addEventListener('click', () => {
     activeSections = new Set(allSections);
